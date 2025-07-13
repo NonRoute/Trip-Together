@@ -3,6 +3,7 @@ import { autoMigrate } from "./lib/migrate";
 import { createOpenAPIApp } from "./lib/openapi";
 import { loggerMiddleware } from "./middleware/logger";
 import authRouter from "./routes/auth/auth.index";
+import tripsRouter from "./routes/trips/trips.index";
 
 // Configuration
 const PORT = Number(process.env.PORT) || 8000;
@@ -17,6 +18,7 @@ app.get("/", (c) => c.text("Trip Together API - Running!"));
 
 const setupRoutes = () => {
   app.route("/auth", authRouter);
+  app.route("/api", tripsRouter);
 };
 
 // Initialize server with auto-migration
