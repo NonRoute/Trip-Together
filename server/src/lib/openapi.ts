@@ -45,8 +45,6 @@ export const successSchema = z.object({
   message: z.string(),
 });
 
-// Note: Auth-related schemas are now in routes/auth/auth.schemas.ts
-
 // Security schemes
 export const bearerAuth = {
   type: "http",

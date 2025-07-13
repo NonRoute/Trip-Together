@@ -4,8 +4,7 @@ import { authSchemas } from "./auth.schemas";
 
 const tags = ["auth"];
 
-// Register route definition
-export const registerRoute = createRoute({
+export const register = createRoute({
   method: "post",
   path: "/register",
   tags,
@@ -43,11 +42,18 @@ export const registerRoute = createRoute({
       },
       description: "Email already registered",
     },
+    500: {
+      content: {
+        "application/json": {
+          schema: authSchemas.error,
+        },
+      },
+      description: "Internal server error",
+    },
   },
 });
 
-// Login route definition
-export const loginRoute = createRoute({
+export const login = createRoute({
   method: "post",
   path: "/login",
   tags,
@@ -88,8 +94,7 @@ export const loginRoute = createRoute({
   },
 });
 
-// Refresh route definition
-export const refreshRoute = createRoute({
+export const refresh = createRoute({
   method: "post",
   path: "/refresh",
   tags,
@@ -127,11 +132,18 @@ export const refreshRoute = createRoute({
       },
       description: "Invalid or expired refresh token",
     },
+    404: {
+      content: {
+        "application/json": {
+          schema: authSchemas.error,
+        },
+      },
+      description: "User not found",
+    },
   },
 });
 
-// Logout route definition
-export const logoutRoute = createRoute({
+export const logout = createRoute({
   method: "post",
   path: "/logout",
   middleware: [authMiddleware],
@@ -170,8 +182,7 @@ export const logoutRoute = createRoute({
   },
 });
 
-// Me route definition (protected)
-export const meRoute = createRoute({
+export const me = createRoute({
   method: "get",
   path: "/me",
   middleware: [authMiddleware],
