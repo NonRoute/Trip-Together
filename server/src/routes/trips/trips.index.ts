@@ -8,24 +8,67 @@ const router = createOpenAPIApp();
 
 // Create a new trip
 router.openapi(tripRoutes.createTrip, async (c) => {
-  const { title, description, destination } = c.req.valid("json");
+  const { title, description, destination, days } = c.req.valid("json");
   const userId = (c.var as any).userId;
 
-  const [trip] = await db
-    .insert(tripsTable)
-    .values({
-      title,
-      description,
-      destination,
-      creatorId: userId,
-    })
-    .returning();
+  try {
+    // Start a transaction to create trip and days together
+    const result = await db.transaction(async (tx) => {
+      // Create the trip
+      const [trip] = await tx
+        .insert(tripsTable)
+        .values({
+          title,
+          description,
+          destination,
+          creatorId: userId,
+        })
+        .returning();
 
-  if (!trip) {
+      if (!trip) {
+        throw new Error("Failed to create trip");
+      }
+
+      // Create the trip days
+      const tripDaysData = days.map((day: string) => ({
+        tripId: trip.id,
+        day,
+      }));
+
+      const createdDays = await tx
+        .insert(tripDaysTable)
+        .values(tripDaysData)
+        .returning();
+
+      return {
+        trip,
+        days: createdDays,
+      };
+    });
+
+    // Convert Date objects to ISO strings
+    const tripWithStringDates = {
+      ...result.trip,
+      createdAt: result.trip.createdAt.toISOString(),
+      updatedAt: result.trip.updatedAt.toISOString(),
+    };
+
+    const daysWithStringDates = result.days.map((day) => ({
+      ...day,
+      createdAt: day.createdAt.toISOString(),
+    }));
+
+    return c.json(
+      {
+        trip: tripWithStringDates,
+        days: daysWithStringDates,
+      },
+      201,
+    );
+  } catch (error) {
+    console.error("Failed to create trip:", error);
     return c.json({ error: "Failed to create trip" }, 500);
   }
-
-  return c.json(trip, 201);
 });
 
 // Get all trips

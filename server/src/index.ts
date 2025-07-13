@@ -18,7 +18,7 @@ app.get("/", (c) => c.text("Trip Together API - Running!"));
 
 const setupRoutes = () => {
   app.route("/auth", authRouter);
-  app.route("/api", tripsRouter);
+  app.route("/trip", tripsRouter);
 };
 
 // Initialize server with auto-migration

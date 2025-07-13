@@ -2,11 +2,11 @@ import { createRoute, z } from "@hono/zod-openapi";
 import { authMiddleware } from "../../middleware/auth";
 import { tripSchemas } from "./trips.schemas";
 
-const tags = ["trips"];
+const tags = ["trip"];
 
 export const createTrip = createRoute({
   method: "post",
-  path: "/trips",
+  path: "/",
   middleware: [authMiddleware],
   tags,
   security: [
@@ -19,6 +19,12 @@ export const createTrip = createRoute({
       content: {
         "application/json": {
           schema: tripSchemas.createTrip,
+          example: {
+            title: "Weekend Beach Trip",
+            description: "A fun weekend trip to the beach with friends",
+            destination: "Miami Beach",
+            days: ["2024-06-15", "2024-06-16", "2024-06-17"],
+          },
         },
       },
     },
@@ -27,15 +33,50 @@ export const createTrip = createRoute({
     201: {
       content: {
         "application/json": {
-          schema: tripSchemas.trip,
+          schema: tripSchemas.tripCreationResponse,
+          example: {
+            trip: {
+              id: 1,
+              title: "Weekend Beach Trip",
+              description: "A fun weekend trip to the beach with friends",
+              creatorId: 1,
+              destination: "Miami Beach",
+              isActive: true,
+              createdAt: "2024-01-01T12:00:00Z",
+              updatedAt: "2024-01-01T12:00:00Z",
+            },
+            days: [
+              {
+                id: 1,
+                tripId: 1,
+                day: "2024-06-15",
+                createdAt: "2024-01-01T12:00:00Z",
+              },
+              {
+                id: 2,
+                tripId: 1,
+                day: "2024-06-16",
+                createdAt: "2024-01-01T12:00:00Z",
+              },
+              {
+                id: 3,
+                tripId: 1,
+                day: "2024-06-17",
+                createdAt: "2024-01-01T12:00:00Z",
+              },
+            ],
+          },
         },
       },
-      description: "Trip created successfully",
+      description: "Trip created successfully with days",
     },
     400: {
       content: {
         "application/json": {
           schema: tripSchemas.error,
+          example: {
+            error: "Invalid request data: days array is required",
+          },
         },
       },
       description: "Invalid request data",
@@ -44,6 +85,9 @@ export const createTrip = createRoute({
       content: {
         "application/json": {
           schema: tripSchemas.error,
+          example: {
+            error: "Unauthorized: Please provide a valid authentication token",
+          },
         },
       },
       description: "Unauthorized",
@@ -52,6 +96,9 @@ export const createTrip = createRoute({
       content: {
         "application/json": {
           schema: tripSchemas.error,
+          example: {
+            error: "Internal server error",
+          },
         },
       },
       description: "Internal server error",
@@ -61,13 +108,35 @@ export const createTrip = createRoute({
 
 export const getTrips = createRoute({
   method: "get",
-  path: "/trips",
+  path: "/",
   tags,
   responses: {
     200: {
       content: {
         "application/json": {
           schema: tripSchemas.tripsArray,
+          example: [
+            {
+              id: 1,
+              title: "Weekend Beach Trip",
+              description: "A fun weekend trip to the beach",
+              creatorId: 1,
+              destination: "Miami Beach",
+              isActive: true,
+              createdAt: "2024-01-01T12:00:00Z",
+              updatedAt: "2024-01-01T12:00:00Z",
+            },
+            {
+              id: 2,
+              title: "Mountain Hiking Adventure",
+              description: "Explore the beautiful mountain trails",
+              creatorId: 2,
+              destination: "Rocky Mountains",
+              isActive: true,
+              createdAt: "2024-01-02T10:00:00Z",
+              updatedAt: "2024-01-02T10:00:00Z",
+            },
+          ],
         },
       },
       description: "List of trips",
@@ -85,7 +154,7 @@ export const getTrips = createRoute({
 
 export const getTrip = createRoute({
   method: "get",
-  path: "/trips/{tripId}",
+  path: "/{tripId}",
   tags,
   request: {
     params: z
@@ -112,6 +181,32 @@ export const getTrip = createRoute({
       content: {
         "application/json": {
           schema: tripSchemas.tripWithDays,
+          example: {
+            trip: {
+              id: 1,
+              title: "Weekend Beach Trip",
+              description: "A fun weekend trip to the beach",
+              creatorId: 1,
+              destination: "Miami Beach",
+              isActive: true,
+              createdAt: "2024-01-01T12:00:00Z",
+              updatedAt: "2024-01-01T12:00:00Z",
+            },
+            days: [
+              {
+                id: 1,
+                tripId: 1,
+                day: "2024-06-15",
+                createdAt: "2024-01-01T12:00:00Z",
+              },
+              {
+                id: 2,
+                tripId: 1,
+                day: "2024-06-16",
+                createdAt: "2024-01-01T12:00:00Z",
+              },
+            ],
+          },
         },
       },
       description: "Trip with days",
@@ -120,6 +215,9 @@ export const getTrip = createRoute({
       content: {
         "application/json": {
           schema: tripSchemas.error,
+          example: {
+            error: "Trip not found",
+          },
         },
       },
       description: "Trip not found",
@@ -137,7 +235,7 @@ export const getTrip = createRoute({
 
 export const addTripDay = createRoute({
   method: "post",
-  path: "/trips/{tripId}/days",
+  path: "/{tripId}/days",
   middleware: [authMiddleware],
   tags,
   security: [
@@ -169,6 +267,9 @@ export const addTripDay = createRoute({
       content: {
         "application/json": {
           schema: tripSchemas.addTripDay,
+          example: {
+            day: "2024-06-18",
+          },
         },
       },
     },
@@ -178,6 +279,12 @@ export const addTripDay = createRoute({
       content: {
         "application/json": {
           schema: tripSchemas.tripDay,
+          example: {
+            id: 3,
+            tripId: 1,
+            day: "2024-06-18",
+            createdAt: "2024-01-01T14:00:00Z",
+          },
         },
       },
       description: "Trip day added successfully",
@@ -219,35 +326,27 @@ export const addTripDay = createRoute({
 
 export const getTripDay = createRoute({
   method: "get",
-  path: "/trips/{tripId}/days/{dayId}",
+  path: "/{tripId}/days/{dayId}",
   tags,
   request: {
     params: z
       .object({
-        tripId: z
-          .number()
-          .openapi({
-            type: "number",
-            description: "Trip ID",
-            example: 1,
-            param: {
-              name: "tripId",
-              in: "path",
-            },
-          })
-          .openapi({
-            type: "object",
-            param: {
-              name: "tripId",
-              in: "path",
-            },
-          }),
+        tripId: z.number().openapi({
+          type: "number",
+          description: "Trip ID",
+          example: 1,
+          param: {
+            name: "tripId",
+            in: "path",
+          },
+        }),
         dayId: z.number().openapi({
           type: "number",
           description: "Trip day ID",
           example: 1,
           param: {
             name: "dayId",
+            in: "path",
           },
         }),
       })
@@ -256,6 +355,10 @@ export const getTripDay = createRoute({
         param: {
           name: "tripId",
         },
+        example: {
+          tripId: 1,
+          dayId: 1,
+        },
       }),
   },
   responses: {
@@ -263,6 +366,34 @@ export const getTripDay = createRoute({
       content: {
         "application/json": {
           schema: tripSchemas.tripDayWithSelections,
+          example: {
+            tripDay: {
+              id: 1,
+              tripId: 1,
+              day: "2024-06-15",
+              createdAt: "2024-01-01T12:00:00Z",
+            },
+            selections: [
+              {
+                id: 1,
+                userId: 1,
+                guestName: null,
+                tripDayId: 1,
+                notes: "I can only join for half day",
+                createdAt: "2024-01-01T12:00:00Z",
+                updatedAt: "2024-01-01T12:00:00Z",
+              },
+              {
+                id: 2,
+                userId: null,
+                guestName: "John Doe",
+                tripDayId: 1,
+                notes: "Looking forward to this!",
+                createdAt: "2024-01-01T13:00:00Z",
+                updatedAt: "2024-01-01T13:00:00Z",
+              },
+            ],
+          },
         },
       },
       description: "Trip day with selections",
@@ -288,35 +419,27 @@ export const getTripDay = createRoute({
 
 export const createDaySelection = createRoute({
   method: "post",
-  path: "/trips/{tripId}/days/{dayId}/selections",
+  path: "/{tripId}/days/{dayId}/selections",
   tags,
   request: {
     params: z
       .object({
-        tripId: z
-          .number()
-          .openapi({
-            type: "number",
-            description: "Trip ID",
-            example: 1,
-            param: {
-              name: "tripId",
-              in: "path",
-            },
-          })
-          .openapi({
-            type: "object",
-            param: {
-              name: "tripId",
-              in: "path",
-            },
-          }),
+        tripId: z.number().openapi({
+          type: "number",
+          description: "Trip ID",
+          example: 1,
+          param: {
+            name: "tripId",
+            in: "path",
+          },
+        }),
         dayId: z.number().openapi({
           type: "number",
           description: "Trip day ID",
           example: 1,
           param: {
             name: "dayId",
+            in: "path",
           },
         }),
       })
@@ -325,11 +448,19 @@ export const createDaySelection = createRoute({
         param: {
           name: "tripId",
         },
+        example: {
+          tripId: 1,
+          dayId: 1,
+        },
       }),
     body: {
       content: {
         "application/json": {
           schema: tripSchemas.createDaySelection,
+          example: {
+            guestName: "John Doe",
+            notes: "I can only join for half day, but looking forward to it!",
+          },
         },
       },
     },
@@ -339,6 +470,15 @@ export const createDaySelection = createRoute({
       content: {
         "application/json": {
           schema: tripSchemas.userDaySelection,
+          example: {
+            id: 1,
+            userId: null,
+            guestName: "John Doe",
+            tripDayId: 1,
+            notes: "I can only join for half day, but looking forward to it!",
+            createdAt: "2024-01-01T15:00:00Z",
+            updatedAt: "2024-01-01T15:00:00Z",
+          },
         },
       },
       description: "Day selection created successfully",
@@ -372,7 +512,7 @@ export const createDaySelection = createRoute({
 
 export const updateDaySelection = createRoute({
   method: "put",
-  path: "/trips/{tripId}/days/{dayId}/selections/{selectionId}",
+  path: "/{tripId}/days/{dayId}/selections/{selectionId}",
   middleware: [authMiddleware],
   tags,
   security: [
@@ -407,6 +547,7 @@ export const updateDaySelection = createRoute({
           example: 1,
           param: {
             name: "selectionId",
+            in: "path",
           },
         }),
       })
@@ -414,12 +555,20 @@ export const updateDaySelection = createRoute({
         type: "object",
         param: {
           name: "tripId",
+          example: {
+            tripId: 1,
+            dayId: 1,
+            selectionId: 1,
+          },
         },
       }),
     body: {
       content: {
         "application/json": {
           schema: tripSchemas.createDaySelection,
+          example: {
+            notes: "Updated: I can join for the full day now!",
+          },
         },
       },
     },
@@ -429,6 +578,15 @@ export const updateDaySelection = createRoute({
       content: {
         "application/json": {
           schema: tripSchemas.userDaySelection,
+          example: {
+            id: 1,
+            userId: 1,
+            guestName: null,
+            tripDayId: 1,
+            notes: "Updated: I can join for the full day now!",
+            createdAt: "2024-01-01T15:00:00Z",
+            updatedAt: "2024-01-01T16:00:00Z",
+          },
         },
       },
       description: "Day selection updated successfully",
@@ -470,7 +628,7 @@ export const updateDaySelection = createRoute({
 
 export const deleteDaySelection = createRoute({
   method: "delete",
-  path: "/trips/{tripId}/days/{dayId}/selections/{selectionId}",
+  path: "/{tripId}/days/{dayId}/selections/{selectionId}",
   middleware: [authMiddleware],
   tags,
   security: [
@@ -514,6 +672,11 @@ export const deleteDaySelection = createRoute({
         param: {
           name: "tripId",
         },
+        example: {
+          tripId: 1,
+          dayId: 1,
+          selectionId: 1,
+        },
       }),
   },
   responses: {
@@ -521,6 +684,9 @@ export const deleteDaySelection = createRoute({
       content: {
         "application/json": {
           schema: tripSchemas.success,
+          example: {
+            message: "Selection deleted successfully",
+          },
         },
       },
       description: "Day selection deleted successfully",
