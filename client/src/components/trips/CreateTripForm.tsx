@@ -1,11 +1,12 @@
 "use client";
 
+import Calendar from "@/components/ui/Calendar";
+import { tripAPI } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { Calendar as CalendarIcon, Loader2, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { tripAPI } from "@/lib/api";
-import { useRouter } from "next/navigation";
-import { Plus, X, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface CreateTripFormData {
   title: string;
@@ -14,7 +15,8 @@ interface CreateTripFormData {
 }
 
 export default function CreateTripForm() {
-  const [days, setDays] = useState<string[]>([""]);
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
@@ -25,20 +27,12 @@ export default function CreateTripForm() {
     formState: { errors },
   } = useForm<CreateTripFormData>();
 
-  const addDay = () => {
-    setDays([...days, ""]);
+  const handleDateSelect = (date: string) => {
+    setSelectedDates((prev) => [...prev, date].sort());
   };
 
-  const removeDay = (index: number) => {
-    if (days.length > 1) {
-      setDays(days.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateDay = (index: number, value: string) => {
-    const newDays = [...days];
-    newDays[index] = value;
-    setDays(newDays);
+  const handleDateDeselect = (date: string) => {
+    setSelectedDates((prev) => prev.filter((d) => d !== date));
   };
 
   const onSubmit = async (data: CreateTripFormData) => {
@@ -46,8 +40,7 @@ export default function CreateTripForm() {
       setError("");
       setIsSubmitting(true);
 
-      const validDays = days.filter((day) => day.trim() !== "");
-      if (validDays.length === 0) {
+      if (selectedDates.length === 0) {
         setError("At least one day is required");
         return;
       }
@@ -56,12 +49,17 @@ export default function CreateTripForm() {
         title: data.title,
         description: data.description || undefined,
         destination: data.destination || undefined,
-        days: validDays,
+        days: selectedDates,
       });
 
       router.push("/");
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to create trip");
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "response" in err) {
+        const axiosError = err as { response?: { data?: { error?: string } } };
+        setError(axiosError.response?.data?.error || "Failed to create trip");
+      } else {
+        setError("Failed to create trip");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -147,36 +145,66 @@ export default function CreateTripForm() {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Trip Days *
             </label>
-            <div className="space-y-3">
-              {days.map((day, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <input
-                    type="date"
-                    value={day}
-                    onChange={(e) => updateDay(index, e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required={index === 0}
-                  />
-                  {days.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeDay(index)}
-                      className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
+
+            {/* Selected dates display */}
+            {selectedDates.length > 0 && (
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    Selected Dates ({selectedDates.length})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDates([])}
+                    className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                  >
+                    Clear all
+                  </button>
                 </div>
-              ))}
-              <button
-                type="button"
-                onClick={addDay}
-                className="flex items-center text-sm text-blue-600 hover:text-blue-800"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Add another day
-              </button>
-            </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedDates.map((date) => (
+                    <span
+                      key={date}
+                      className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100"
+                    >
+                      {new Date(date).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => handleDateDeselect(date)}
+                        className="ml-1 text-blue-600 hover:text-blue-800"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Calendar toggle button */}
+            <button
+              type="button"
+              onClick={() => setShowCalendar(!showCalendar)}
+              className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+            >
+              <CalendarIcon className="h-4 w-4 mr-2" />
+              {showCalendar ? "Hide Calendar" : "Select Trip Days"}
+            </button>
+
+            {/* Calendar component */}
+            {showCalendar && (
+              <div className="mt-4 p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800">
+                <Calendar
+                  selectedDates={selectedDates}
+                  onDateSelect={handleDateSelect}
+                  onDateDeselect={handleDateDeselect}
+                />
+              </div>
+            )}
           </div>
 
           <div className="flex space-x-4">
