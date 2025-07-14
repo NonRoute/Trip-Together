@@ -46,22 +46,10 @@ router.openapi(tripRoutes.createTrip, async (c) => {
       };
     });
 
-    // Convert Date objects to ISO strings
-    const tripWithStringDates = {
-      ...result.trip,
-      createdAt: result.trip.createdAt.toISOString(),
-      updatedAt: result.trip.updatedAt.toISOString(),
-    };
-
-    const daysWithStringDates = result.days.map((day) => ({
-      ...day,
-      createdAt: day.createdAt.toISOString(),
-    }));
-
     return c.json(
       {
-        trip: tripWithStringDates,
-        days: daysWithStringDates,
+        trip: result.trip,
+        days: result.days,
       },
       201,
     );
@@ -79,14 +67,7 @@ router.openapi(tripRoutes.getTrips, async (c) => {
     .where(eq(tripsTable.isActive, true))
     .orderBy(tripsTable.createdAt);
 
-  // Convert Date objects to ISO strings
-  const tripsWithStringDates = trips.map((trip) => ({
-    ...trip,
-    createdAt: trip.createdAt.toISOString(),
-    updatedAt: trip.updatedAt.toISOString(),
-  }));
-
-  return c.json(tripsWithStringDates, 200);
+  return c.json(trips, 200);
 });
 
 // Get a specific trip with its days
@@ -109,29 +90,17 @@ router.openapi(tripRoutes.getTrip, async (c) => {
     .where(eq(tripDaysTable.tripId, tripId))
     .orderBy(tripDaysTable.day);
 
-  // Convert Date objects to ISO strings
-  const tripWithStringDates = {
-    ...trip[0]!,
-    createdAt: trip[0]!.createdAt.toISOString(),
-    updatedAt: trip[0]!.updatedAt.toISOString(),
-  };
-
-  const daysWithStringDates = days.map((day) => ({
-    ...day,
-    createdAt: day.createdAt.toISOString(),
-  }));
-
   return c.json(
     {
-      trip: tripWithStringDates,
-      days: daysWithStringDates,
+      trip: trip[0]!,
+      days: days,
     },
     200,
   );
 });
 
 // Add a day to a trip
-router.openapi(tripRoutes.addTripDay, async (c: any) => {
+router.openapi(tripRoutes.addTripDay, async (c) => {
   const { tripId } = c.req.valid("param");
   const { day } = c.req.valid("json");
   const userId = (c.var as any).userId;
@@ -177,7 +146,7 @@ router.openapi(tripRoutes.addTripDay, async (c: any) => {
 });
 
 // Get a specific trip day with selections
-router.openapi(tripRoutes.getTripDay, async (c: any) => {
+router.openapi(tripRoutes.getTripDay, async (c) => {
   const { tripId, dayId } = c.req.valid("param");
 
   const tripDay = await db
@@ -204,29 +173,17 @@ router.openapi(tripRoutes.getTripDay, async (c: any) => {
     .where(eq(userDaySelectionsTable.tripDayId, dayId))
     .orderBy(userDaySelectionsTable.createdAt);
 
-  // Convert Date objects to ISO strings
-  const tripDayWithStringDates = {
-    ...tripDay[0],
-    createdAt: tripDay[0]?.createdAt.toISOString(),
-  };
-
-  const selectionsWithStringDates = selections.map((selection) => ({
-    ...selection,
-    createdAt: selection.createdAt.toISOString(),
-    updatedAt: selection.updatedAt.toISOString(),
-  }));
-
   return c.json(
     {
-      tripDay: tripDayWithStringDates,
-      selections: selectionsWithStringDates,
+      tripDay: tripDay[0]!,
+      selections: selections,
     },
     200,
   );
 });
 
 // Create a day selection (for both logged in and guest users)
-router.openapi(tripRoutes.createDaySelection, async (c: any) => {
+router.openapi(tripRoutes.createDaySelection, async (c) => {
   const { tripId, dayId } = c.req.valid("param");
   const { guestName, notes } = c.req.valid("json");
   const userId = (c.var as any).userId;
@@ -268,7 +225,7 @@ router.openapi(tripRoutes.createDaySelection, async (c: any) => {
         .where(
           and(
             eq(userDaySelectionsTable.tripDayId, dayId),
-            eq(userDaySelectionsTable.guestName, guestName),
+            eq(userDaySelectionsTable.guestName, guestName!),
           ),
         )
         .limit(1);
@@ -291,18 +248,11 @@ router.openapi(tripRoutes.createDaySelection, async (c: any) => {
     return c.json({ error: "Failed to create day selection" }, 500);
   }
 
-  // Convert Date objects to ISO strings
-  const selectionWithStringDates = {
-    ...selection,
-    createdAt: selection.createdAt.toISOString(),
-    updatedAt: selection.updatedAt.toISOString(),
-  };
-
-  return c.json(selectionWithStringDates, 201);
+  return c.json(selection, 201);
 });
 
 // Update a day selection (only for logged in users)
-router.openapi(tripRoutes.updateDaySelection, async (c: any) => {
+router.openapi(tripRoutes.updateDaySelection, async (c) => {
   const { tripId, dayId, selectionId } = c.req.valid("param");
   const { notes } = c.req.valid("json");
   const userId = (c.var as any).userId;
@@ -340,18 +290,11 @@ router.openapi(tripRoutes.updateDaySelection, async (c: any) => {
     return c.json({ error: "Failed to update selection" }, 500);
   }
 
-  // Convert Date objects to ISO strings
-  const updatedSelectionWithStringDates = {
-    ...updatedSelection,
-    createdAt: updatedSelection.createdAt.toISOString(),
-    updatedAt: updatedSelection.updatedAt.toISOString(),
-  };
-
-  return c.json(updatedSelectionWithStringDates, 200);
+  return c.json(updatedSelection, 200);
 });
 
 // Delete a day selection (only for logged in users)
-router.openapi(tripRoutes.deleteDaySelection, async (c: any) => {
+router.openapi(tripRoutes.deleteDaySelection, async (c) => {
   const { tripId, dayId, selectionId } = c.req.valid("param");
   const userId = (c.var as any).userId;
 

@@ -159,7 +159,7 @@ export const getTrip = createRoute({
   request: {
     params: z
       .object({
-        tripId: z.number().openapi({
+        tripId: z.coerce.number().openapi({
           type: "number",
           example: 1,
           param: {
@@ -169,7 +169,7 @@ export const getTrip = createRoute({
         }),
       })
       .openapi("TripParams", {
-        type: "object",
+        type: "number",
         param: {
           name: "tripId",
           in: "path",
@@ -246,7 +246,7 @@ export const addTripDay = createRoute({
   request: {
     params: z
       .object({
-        tripId: z.number().openapi({
+        tripId: z.coerce.number().openapi({
           type: "number",
           description: "Trip ID",
           example: 1,
@@ -257,7 +257,7 @@ export const addTripDay = createRoute({
         }),
       })
       .openapi({
-        type: "object",
+        type: "number",
         param: {
           name: "tripId",
           in: "path",
@@ -331,7 +331,7 @@ export const getTripDay = createRoute({
   request: {
     params: z
       .object({
-        tripId: z.number().openapi({
+        tripId: z.coerce.number().openapi({
           type: "number",
           description: "Trip ID",
           example: 1,
@@ -340,7 +340,7 @@ export const getTripDay = createRoute({
             in: "path",
           },
         }),
-        dayId: z.number().openapi({
+        dayId: z.coerce.number().openapi({
           type: "number",
           description: "Trip day ID",
           example: 1,
@@ -424,7 +424,7 @@ export const createDaySelection = createRoute({
   request: {
     params: z
       .object({
-        tripId: z.number().openapi({
+        tripId: z.coerce.number().openapi({
           type: "number",
           description: "Trip ID",
           example: 1,
@@ -433,7 +433,7 @@ export const createDaySelection = createRoute({
             in: "path",
           },
         }),
-        dayId: z.number().openapi({
+        dayId: z.coerce.number().openapi({
           type: "number",
           description: "Trip day ID",
           example: 1,
@@ -523,7 +523,7 @@ export const updateDaySelection = createRoute({
   request: {
     params: z
       .object({
-        tripId: z.number().openapi({
+        tripId: z.coerce.number().openapi({
           type: "number",
           description: "Trip ID",
           example: 1,
@@ -532,7 +532,7 @@ export const updateDaySelection = createRoute({
             in: "path",
           },
         }),
-        dayId: z.number().openapi({
+        dayId: z.coerce.number().openapi({
           type: "number",
           description: "Trip day ID",
           example: 1,
@@ -541,7 +541,7 @@ export const updateDaySelection = createRoute({
             in: "path",
           },
         }),
-        selectionId: z.number().openapi({
+        selectionId: z.coerce.number().openapi({
           type: "number",
           description: "Selection ID",
           example: 1,
@@ -639,7 +639,7 @@ export const deleteDaySelection = createRoute({
   request: {
     params: z
       .object({
-        tripId: z.number().openapi({
+        tripId: z.coerce.number().openapi({
           type: "number",
           description: "Trip ID",
           example: 1,
@@ -648,7 +648,7 @@ export const deleteDaySelection = createRoute({
             in: "path",
           },
         }),
-        dayId: z.number().openapi({
+        dayId: z.coerce.number().openapi({
           type: "number",
           description: "Trip day ID",
           example: 1,
@@ -657,7 +657,7 @@ export const deleteDaySelection = createRoute({
             in: "path",
           },
         }),
-        selectionId: z.number().openapi({
+        selectionId: z.coerce.number().openapi({
           type: "number",
           description: "Selection ID",
           example: 1,
