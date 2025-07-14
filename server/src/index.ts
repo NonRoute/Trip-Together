@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { cors } from "hono/cors";
 import { autoMigrate } from "./lib/migrate";
 import { createOpenAPIApp } from "./lib/openapi";
 import { loggerMiddleware } from "./middleware/logger";
@@ -10,6 +11,17 @@ const PORT = Number(process.env.PORT) || 8000;
 
 // Create main application instance
 const app = createOpenAPIApp();
+
+// Add CORS middleware for frontend communication
+app.use(
+  "*",
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
 
 // Add logging middleware
 app.use("*", loggerMiddleware);
@@ -47,3 +59,6 @@ export default {
   port: PORT,
   fetch: app.fetch,
 };
+
+// Export the app type for RPC
+export type AppType = typeof app;
