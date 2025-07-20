@@ -1,0 +1,24 @@
+{
+  "name": "trip-together",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev-client": "pnpm --filter trip-together dev",
+    "dev-server": "pnpm --filter trip-together-server dev",
+    "build": "pnpm --filter trip-together build && pnpm --filter trip-together-server build",
+    "start-client": "pnpm --filter trip-together start",
+    "start-server": "pnpm --filter trip-together-server start"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "concurrently": "^8.2.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

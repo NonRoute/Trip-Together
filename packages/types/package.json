@@ -1,0 +1,17 @@
+{
+  "name": "@repo/types",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@hono/zod-openapi": "^1.0.2"
+  },
+  "exports": {
+    "./schema/auth": "./schema/auth.ts",
+    "./schema/trips": "./schema/trips.ts"
+  }
+}
