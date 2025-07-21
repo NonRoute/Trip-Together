@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { tripAPI, Trip } from "@/lib/api";
+import { tripAPI, Trip, TripWithCreator } from "@/lib/api";
 import TripCard from "@/components/trips/TripCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, Plus } from "lucide-react";
 import Link from "next/link";
-import { TripWithCreator } from "@repo/types/schema/trips";
 
 export default function Home() {
   const [trips, setTrips] = useState<TripWithCreator[]>([]);

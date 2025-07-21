@@ -1,6 +1,6 @@
 import { createRoute } from "@hono/zod-openapi";
-import { authSchemas } from "@repo/types/schema/auth";
 import { authMiddleware } from "../../middleware/auth";
+import { authSchemas } from "./auth";
 
 const tags = ["auth"];
 
@@ -12,7 +12,15 @@ export const register = createRoute({
     body: {
       content: {
         "application/json": {
-          schema: authSchemas.register,
+          schema: authSchemas.register.openapi({
+            type: "object",
+            description: "User registration data",
+            example: {
+              name: "John Doe",
+              email: "john@example.com",
+              password: "password123",
+            },
+          }),
         },
       },
     },
@@ -21,7 +29,16 @@ export const register = createRoute({
     201: {
       content: {
         "application/json": {
-          schema: authSchemas.user,
+          schema: authSchemas.user.openapi({
+            type: "object",
+            description: "User object",
+            example: {
+              id: 1,
+              name: "John Doe",
+              email: "john@example.com",
+              createdAt: "2024-01-01T12:00:00Z",
+            },
+          }),
         },
       },
       description: "User registered successfully",

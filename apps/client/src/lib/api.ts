@@ -74,6 +74,10 @@ export interface Trip {
   creator: string | null;
 }
 
+export interface TripWithCreator extends Trip {
+  creator: string;
+}
+
 export interface TripDay {
   id: number;
   tripId: number;

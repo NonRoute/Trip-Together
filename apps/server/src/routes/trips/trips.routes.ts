@@ -1,6 +1,6 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import { tripSchemas } from "@repo/types/schema/trips";
 import { authMiddleware } from "../../middleware/auth";
+import { tripSchemas } from "./trips";
 
 const tags = ["trip"];
 
@@ -127,6 +127,7 @@ export const getTrips = createRoute({
                 isActive: true,
                 createdAt: "2024-01-01T12:00:00Z",
                 updatedAt: "2024-01-01T12:00:00Z",
+                creator: "John Doe",
               },
               {
                 id: 2,
@@ -137,6 +138,7 @@ export const getTrips = createRoute({
                 isActive: true,
                 createdAt: "2024-01-02T10:00:00Z",
                 updatedAt: "2024-01-02T10:00:00Z",
+                creator: "Jane Doe",
               },
             ],
           }),
