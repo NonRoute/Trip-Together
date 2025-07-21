@@ -114,7 +114,32 @@ export const getTrips = createRoute({
     200: {
       content: {
         "application/json": {
-          schema: z.array(tripSchemas.tripWithCreator),
+          schema: z.array(tripSchemas.tripWithCreator).openapi({
+            type: "array",
+            description: "Array of trips with creator",
+            example: [
+              {
+                id: 1,
+                title: "Weekend Beach Trip",
+                description: "A fun weekend trip to the beach",
+                creatorId: 1,
+                destination: "Miami Beach",
+                isActive: true,
+                createdAt: "2024-01-01T12:00:00Z",
+                updatedAt: "2024-01-01T12:00:00Z",
+              },
+              {
+                id: 2,
+                title: "Mountain Hiking Adventure",
+                description: "Explore the beautiful mountain trails",
+                creatorId: 2,
+                destination: "Rocky Mountains",
+                isActive: true,
+                createdAt: "2024-01-02T10:00:00Z",
+                updatedAt: "2024-01-02T10:00:00Z",
+              },
+            ],
+          }),
           example: [
             {
               id: 1,
@@ -180,7 +205,7 @@ export const getTrip = createRoute({
     200: {
       content: {
         "application/json": {
-          schema: tripSchemas.tripWithDays,
+          schema: tripSchemas.tripWithDaysAndSelections,
           example: {
             trip: {
               id: 1,
@@ -194,22 +219,47 @@ export const getTrip = createRoute({
             },
             days: [
               {
-                id: 1,
-                tripId: 1,
-                day: "2024-06-15",
-                createdAt: "2024-01-01T12:00:00Z",
+                tripDay: {
+                  id: 1,
+                  tripId: 1,
+                  day: "2024-06-15",
+                  createdAt: "2024-01-01T12:00:00Z",
+                },
+                selections: [
+                  {
+                    id: 1,
+                    userId: 1,
+                    guestName: null,
+                    tripDayId: 1,
+                    notes: "I can only join for half day",
+                    createdAt: "2024-01-01T12:00:00Z",
+                    updatedAt: "2024-01-01T12:00:00Z",
+                  },
+                  {
+                    id: 2,
+                    userId: null,
+                    guestName: "John Doe",
+                    tripDayId: 1,
+                    notes: "Looking forward to this!",
+                    createdAt: "2024-01-01T12:00:00Z",
+                    updatedAt: "2024-01-01T12:00:00Z",
+                  },
+                ],
               },
               {
-                id: 2,
-                tripId: 1,
-                day: "2024-06-16",
-                createdAt: "2024-01-01T12:00:00Z",
+                tripDay: {
+                  id: 2,
+                  tripId: 1,
+                  day: "2024-06-16",
+                  createdAt: "2024-01-01T12:00:00Z",
+                },
+                selections: [],
               },
             ],
           },
         },
       },
-      description: "Trip with days",
+      description: "Trip with days and user selections",
     },
     404: {
       content: {
@@ -421,6 +471,12 @@ export const createDaySelection = createRoute({
   method: "post",
   path: "/{tripId}/days/{dayId}/selections",
   tags,
+  middleware: [authMiddleware],
+  security: [
+    {
+      BearerAuth: [],
+    },
+  ],
   request: {
     params: z
       .object({
@@ -456,9 +512,23 @@ export const createDaySelection = createRoute({
     body: {
       content: {
         "application/json": {
-          schema: tripSchemas.createDaySelection,
+          schema: z
+            .object({
+              notes: z.string().optional().openapi({
+                type: "string",
+                description: "User notes",
+                example: "I can only join for half day",
+              }),
+            })
+            .openapi({
+              type: "object",
+              description: "Create day selection data for authenticated users",
+              example: {
+                notes:
+                  "I can only join for half day, but looking forward to it!",
+              },
+            }),
           example: {
-            guestName: "John Doe",
             notes: "I can only join for half day, but looking forward to it!",
           },
         },
@@ -472,8 +542,8 @@ export const createDaySelection = createRoute({
           schema: tripSchemas.userDaySelection,
           example: {
             id: 1,
-            userId: null,
-            guestName: "John Doe",
+            userId: 1,
+            guestName: null,
             tripDayId: 1,
             notes: "I can only join for half day, but looking forward to it!",
             createdAt: "2024-01-01T15:00:00Z",
@@ -614,6 +684,133 @@ export const updateDaySelection = createRoute({
         },
       },
       description: "Selection not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: tripSchemas.error,
+        },
+      },
+      description: "Internal server error",
+    },
+  },
+});
+
+export const createGuestDaySelection = createRoute({
+  method: "post",
+  path: "/{tripId}/days/{dayId}/guest-selections",
+  tags,
+  request: {
+    params: z
+      .object({
+        tripId: z.coerce.number().openapi({
+          type: "number",
+          description: "Trip ID",
+          example: 1,
+          param: {
+            name: "tripId",
+            in: "path",
+          },
+        }),
+        dayId: z.coerce.number().openapi({
+          type: "number",
+          description: "Trip day ID",
+          example: 1,
+          param: {
+            name: "dayId",
+            in: "path",
+          },
+        }),
+      })
+      .openapi({
+        type: "object",
+        param: {
+          name: "tripId",
+        },
+        example: {
+          tripId: 1,
+          dayId: 1,
+        },
+      }),
+    body: {
+      content: {
+        "application/json": {
+          schema: z
+            .object({
+              guestName: z.string().min(1, "Guest name is required").openapi({
+                type: "string",
+                description: "Guest name",
+                example: "John Doe",
+              }),
+              notes: z.string().optional().openapi({
+                type: "string",
+                description: "Guest notes",
+                example: "I can only join for half day",
+              }),
+            })
+            .openapi({
+              type: "object",
+              description: "Create guest day selection data",
+              example: {
+                guestName: "John Doe",
+                notes: "I can only join for half day",
+              },
+            }),
+          example: {
+            guestName: "John Doe",
+            notes: "I can only join for half day, but looking forward to it!",
+          },
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      content: {
+        "application/json": {
+          schema: tripSchemas.userDaySelection,
+          example: {
+            id: 1,
+            userId: null,
+            guestName: "John Doe",
+            tripDayId: 1,
+            notes: "I can only join for half day, but looking forward to it!",
+            createdAt: "2024-01-01T15:00:00Z",
+            updatedAt: "2024-01-01T15:00:00Z",
+          },
+        },
+      },
+      description: "Guest day selection created successfully",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: tripSchemas.error,
+          example: {
+            error: "Guest name is required",
+          },
+        },
+      },
+      description: "Invalid request data",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: tripSchemas.error,
+        },
+      },
+      description: "Trip day not found",
+    },
+    409: {
+      content: {
+        "application/json": {
+          schema: tripSchemas.error,
+          example: {
+            error: "Guest has already selected this day",
+          },
+        },
+      },
+      description: "Guest already selected this day",
     },
     500: {
       content: {

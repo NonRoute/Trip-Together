@@ -5,7 +5,7 @@ import {
   userDaySelectionsTable,
   usersTable,
 } from "@/db/schema";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { createOpenAPIApp } from "../../lib/openapi";
 import * as tripRoutes from "./trips.routes";
 
@@ -84,7 +84,7 @@ router.openapi(tripRoutes.getTrips, async (c) => {
   return c.json(formattedTrips, 200);
 });
 
-// Get a specific trip with its days
+// Get a specific trip with its days and user selections
 router.openapi(tripRoutes.getTrip, async (c) => {
   const { tripId } = c.req.valid("param");
 
@@ -98,11 +98,65 @@ router.openapi(tripRoutes.getTrip, async (c) => {
     return c.json({ error: "Trip not found" }, 404);
   }
 
-  const days = await db
-    .select()
+  // Get all days with their selections in a single query using LEFT JOIN
+  const daysWithSelections = await db
+    .select({
+      // Trip day fields
+      dayId: tripDaysTable.id,
+      dayTripId: tripDaysTable.tripId,
+      day: tripDaysTable.day,
+      dayCreatedAt: tripDaysTable.createdAt,
+      // Selection fields (nullable due to LEFT JOIN)
+      selectionId: userDaySelectionsTable.id,
+      userId: userDaySelectionsTable.userId,
+      guestName: userDaySelectionsTable.guestName,
+      tripDayId: userDaySelectionsTable.tripDayId,
+      notes: userDaySelectionsTable.notes,
+      selectionCreatedAt: userDaySelectionsTable.createdAt,
+      selectionUpdatedAt: userDaySelectionsTable.updatedAt,
+    })
     .from(tripDaysTable)
+    .leftJoin(
+      userDaySelectionsTable,
+      eq(tripDaysTable.id, userDaySelectionsTable.tripDayId),
+    )
     .where(eq(tripDaysTable.tripId, tripId))
-    .orderBy(tripDaysTable.day);
+    .orderBy(tripDaysTable.day, userDaySelectionsTable.createdAt);
+
+  // Group the results by day
+  const daysMap = new Map();
+
+  daysWithSelections.forEach((row) => {
+    const dayKey = row.dayId;
+
+    if (!daysMap.has(dayKey)) {
+      // Create the day object
+      daysMap.set(dayKey, {
+        tripDay: {
+          id: row.dayId,
+          tripId: row.dayTripId,
+          day: row.day,
+          createdAt: row.dayCreatedAt,
+        },
+        selections: [],
+      });
+    }
+
+    // Add selection if it exists (not null due to LEFT JOIN)
+    if (row.selectionId) {
+      daysMap.get(dayKey).selections.push({
+        id: row.selectionId,
+        userId: row.userId,
+        guestName: row.guestName,
+        tripDayId: row.tripDayId,
+        notes: row.notes,
+        createdAt: row.selectionCreatedAt,
+        updatedAt: row.selectionUpdatedAt,
+      });
+    }
+  });
+
+  const days = Array.from(daysMap.values());
 
   return c.json(
     {
@@ -196,10 +250,10 @@ router.openapi(tripRoutes.getTripDay, async (c) => {
   );
 });
 
-// Create a day selection (for both logged in and guest users)
+// Create a day selection (for authenticated users only)
 router.openapi(tripRoutes.createDaySelection, async (c) => {
   const { tripId, dayId } = c.req.valid("param");
-  const { guestName, notes } = c.req.valid("json");
+  const { notes } = c.req.valid("json");
   const userId = (c.var as any).userId;
 
   // Check if trip day exists
@@ -213,36 +267,17 @@ router.openapi(tripRoutes.createDaySelection, async (c) => {
     return c.json({ error: "Trip day not found" }, 404);
   }
 
-  // Validate that either userId (logged in) or guestName (guest) is provided
-  if (!userId && !guestName) {
-    return c.json(
-      { error: "Either user must be logged in or guest name must be provided" },
-      400,
-    );
-  }
-
   // Check if user already has a selection for this day
-  const existingSelection = userId
-    ? await db
-        .select()
-        .from(userDaySelectionsTable)
-        .where(
-          and(
-            eq(userDaySelectionsTable.tripDayId, dayId),
-            eq(userDaySelectionsTable.userId, userId),
-          ),
-        )
-        .limit(1)
-    : await db
-        .select()
-        .from(userDaySelectionsTable)
-        .where(
-          and(
-            eq(userDaySelectionsTable.tripDayId, dayId),
-            eq(userDaySelectionsTable.guestName, guestName!),
-          ),
-        )
-        .limit(1);
+  const existingSelection = await db
+    .select()
+    .from(userDaySelectionsTable)
+    .where(
+      and(
+        eq(userDaySelectionsTable.tripDayId, dayId),
+        eq(userDaySelectionsTable.userId, userId),
+      ),
+    )
+    .limit(1);
 
   if (existingSelection.length) {
     return c.json({ error: "You already have a selection for this day" }, 400);
@@ -252,7 +287,7 @@ router.openapi(tripRoutes.createDaySelection, async (c) => {
     .insert(userDaySelectionsTable)
     .values({
       userId,
-      guestName,
+      guestName: null,
       tripDayId: dayId,
       notes,
     })
@@ -260,6 +295,64 @@ router.openapi(tripRoutes.createDaySelection, async (c) => {
 
   if (!selection) {
     return c.json({ error: "Failed to create day selection" }, 500);
+  }
+
+  return c.json(selection, 201);
+});
+
+// Create a guest day selection (no authentication required)
+router.openapi(tripRoutes.createGuestDaySelection, async (c) => {
+  const { tripId, dayId } = c.req.valid("param");
+  const { guestName, notes } = c.req.valid("json");
+
+  // Check if trip day exists
+  const tripDay = await db
+    .select()
+    .from(tripDaysTable)
+    .where(and(eq(tripDaysTable.id, dayId), eq(tripDaysTable.tripId, tripId)))
+    .limit(1);
+
+  if (!tripDay.length) {
+    return c.json({ error: "Trip day not found" }, 404);
+  }
+
+  // Check if guest already has a selection for ANY day in this trip
+  const tripDayIds = await db
+    .select({ id: tripDaysTable.id })
+    .from(tripDaysTable)
+    .where(eq(tripDaysTable.tripId, tripId));
+  const tripDayIdList = tripDayIds.map((row) => row.id);
+
+  const existingSelection = await db
+    .select()
+    .from(userDaySelectionsTable)
+    .where(
+      and(
+        eq(userDaySelectionsTable.guestName, guestName),
+        inArray(userDaySelectionsTable.tripDayId, tripDayIdList),
+      ),
+    )
+    .limit(1);
+
+  if (existingSelection.length) {
+    return c.json(
+      { error: "Guest has already selected a day for this trip" },
+      409,
+    );
+  }
+
+  const [selection] = await db
+    .insert(userDaySelectionsTable)
+    .values({
+      userId: null,
+      guestName,
+      tripDayId: dayId,
+      notes,
+    })
+    .returning();
+
+  if (!selection) {
+    return c.json({ error: "Failed to create guest day selection" }, 500);
   }
 
   return c.json(selection, 201);

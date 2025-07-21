@@ -19,7 +19,7 @@ export default function RootLayout({
         <AuthProvider>
           <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
             <Navigation />
-            <main className="flex grow py-12 px-4 sm:px-6 lg:px-8">
+            <main className="flex items-center justify-center grow py-12 px-4 sm:px-6 lg:px-8">
               {children}
             </main>
           </div>

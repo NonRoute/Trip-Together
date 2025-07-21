@@ -101,6 +101,11 @@ export interface TripDayWithSelections {
   selections: DaySelection[];
 }
 
+export interface TripWithDaysAndSelections {
+  trip: Trip;
+  days: TripDayWithSelections[];
+}
+
 // Auth API functions
 export const authAPI = {
   register: async (data: { name: string; email: string; password: string }) => {
@@ -179,6 +184,18 @@ export const tripAPI = {
   ) => {
     const response = await api.post(
       `/trip/${tripId}/days/${dayId}/selections`,
+      data,
+    );
+    return response.data;
+  },
+
+  createGuestDaySelection: async (
+    tripId: number,
+    dayId: number,
+    data: { guestName: string; notes?: string },
+  ) => {
+    const response = await api.post(
+      `/trip/${tripId}/days/${dayId}/guest-selections`,
       data,
     );
     return response.data;

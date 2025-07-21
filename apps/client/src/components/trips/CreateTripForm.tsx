@@ -40,9 +40,10 @@ function TripDetailsStep({ formData, onNext, onCancel }: TripDetailsStepProps) {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<CreateTripFormData>({
     defaultValues: formData,
+    mode: "onChange",
   });
 
   const handleNext = (data: CreateTripFormData) => {
@@ -121,10 +122,9 @@ function TripDetailsStep({ formData, onNext, onCancel }: TripDetailsStepProps) {
         </button>
         <button
           type="submit"
-          disabled={Object.keys(errors).length !== 0}
+          disabled={!isValid}
           className={cn(
-            "flex-1 flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500",
-            Object.keys(errors).length !== 0 && "opacity-50 cursor-not-allowed",
+            "flex-1 flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed",
           )}
         >
           Next
@@ -154,7 +154,7 @@ function DateSelectionStep({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-          Trip Days *
+          Option for Trip Days *
         </label>
 
         {/* Selected dates display */}
@@ -204,6 +204,8 @@ function DateSelectionStep({
             selectedDates={selectedDates}
             onDateSelect={onDateSelect}
             onDateDeselect={onDateDeselect}
+            joinedDates={[]}
+            disableDayLogic={false}
           />
         </div>
       </div>
@@ -301,13 +303,13 @@ export default function CreateTripForm() {
     <div className="w-full grow flex items-center justify-center">
       <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8 grow max-w-lg">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-center mb-2 text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-center mb-4 text-gray-900 dark:text-white">
             Create New Trip
           </h2>
 
           {/* Step indicator */}
-          <div className="flex items-center justify-center space-x-4">
-            <div className="flex flex-col items-center">
+          <div className="flex items-center justify-center gap-4">
+            <div className="flex flex-col items-center gap-1 px-2">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   currentStep >= 1
@@ -318,7 +320,7 @@ export default function CreateTripForm() {
                 1
               </div>
               <span
-                className={`mt-1 text-sm font-medium ${
+                className={`text-sm font-medium ${
                   currentStep >= 1 ? "text-blue-400" : "text-gray-400"
                 }`}
               >
@@ -330,7 +332,7 @@ export default function CreateTripForm() {
                 currentStep >= 2 ? "bg-blue-600" : "bg-gray-200"
               }`}
             ></div>
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center gap-1 px-2">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   currentStep >= 2
@@ -341,7 +343,7 @@ export default function CreateTripForm() {
                 2
               </div>
               <span
-                className={`mt-1 text-sm font-medium ${
+                className={`text-sm font-medium ${
                   currentStep >= 2 ? "text-blue-400" : "text-gray-400"
                 }`}
               >

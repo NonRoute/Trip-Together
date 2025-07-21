@@ -337,6 +337,83 @@ export const tripDayWithSelectionsSchema = z
     },
   });
 
+// Trip with days and selections schema
+export const tripWithDaysAndSelectionsSchema = z
+  .object({
+    trip: tripSchema,
+    days: z.array(tripDayWithSelectionsSchema).openapi({
+      type: "array",
+      description: "Trip days with user selections",
+      example: [
+        {
+          tripDay: {
+            id: 1,
+            tripId: 1,
+            day: "2024-06-15",
+            createdAt: "2024-01-01T12:00:00Z",
+          },
+          selections: [
+            {
+              id: 1,
+              userId: 1,
+              guestName: null,
+              tripDayId: 1,
+              notes: "I can only join for half day",
+              createdAt: "2024-01-01T12:00:00Z",
+              updatedAt: "2024-01-01T12:00:00Z",
+            },
+            {
+              id: 2,
+              userId: null,
+              guestName: "John Doe",
+              tripDayId: 1,
+              notes: "Looking forward to this!",
+              createdAt: "2024-01-01T12:00:00Z",
+              updatedAt: "2024-01-01T12:00:00Z",
+            },
+          ],
+        },
+      ],
+    }),
+  })
+  .openapi({
+    type: "object",
+    description: "Trip with its days and user selections",
+    example: {
+      trip: {
+        id: 1,
+        title: "Weekend Beach Trip",
+        description: "A fun weekend trip to the beach",
+        creatorId: 1,
+        destination: "Miami Beach",
+        isActive: true,
+        createdAt: "2024-01-01T12:00:00Z",
+        updatedAt: "2024-01-01T12:00:00Z",
+      },
+      days: [
+        {
+          tripDay: {
+            id: 1,
+            tripId: 1,
+            day: "2024-06-15",
+            createdAt: "2024-01-01T12:00:00Z",
+          },
+          selections: [
+            {
+              id: 1,
+              userId: 1,
+              guestName: null,
+              tripDayId: 1,
+              notes: "I can only join for half day",
+              createdAt: "2024-01-01T12:00:00Z",
+              updatedAt: "2024-01-01T12:00:00Z",
+            },
+          ],
+        },
+      ],
+    },
+  });
+
 // Common response schemas
 export const errorSchema = z
   .object({
@@ -392,7 +469,18 @@ export const tripsArraySchema = z.array(tripSchema).openapi({
 export const tripCreationResponseSchema = z
   .object({
     trip: tripSchema,
-    days: z.array(tripDaySchema),
+    days: z.array(tripDaySchema).openapi({
+      type: "array",
+      description: "Array of trip days",
+      example: [
+        {
+          id: 1,
+          tripId: 1,
+          day: "2024-06-15",
+          createdAt: "2024-01-01T12:00:00Z",
+        },
+      ],
+    }),
   })
   .openapi({
     type: "object",
@@ -455,6 +543,9 @@ export type Trip = z.infer<typeof tripSchema>;
 export type TripDay = z.infer<typeof tripDaySchema>;
 export type TripWithDays = z.infer<typeof tripWithDaysSchema>;
 export type TripDayWithSelections = z.infer<typeof tripDayWithSelectionsSchema>;
+export type TripWithDaysAndSelections = z.infer<
+  typeof tripWithDaysAndSelectionsSchema
+>;
 export type ErrorResponse = z.infer<typeof errorSchema>;
 export type SuccessResponse = z.infer<typeof successSchema>;
 export type TripCreationResponse = z.infer<typeof tripCreationResponseSchema>;
@@ -470,6 +561,7 @@ export const tripSchemas = {
   userDaySelection: userDaySelectionSchema,
   createDaySelection: createDaySelectionSchema,
   tripWithDays: tripWithDaysSchema,
+  tripWithDaysAndSelections: tripWithDaysAndSelectionsSchema,
   tripDayWithSelections: tripDayWithSelectionsSchema,
   error: errorSchema,
   success: successSchema,
