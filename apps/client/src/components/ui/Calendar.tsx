@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
 
 interface CalendarProps {
   selectedDates: string[];
@@ -11,6 +12,9 @@ interface CalendarProps {
   selectionCounts?: Record<string, number>;
   availableDates?: string[];
   disableDayLogic?: boolean;
+  onDateRemove?: (date: string) => void;
+  daysToRemove?: string[];
+  isLoggedIn?: boolean;
 }
 
 export default function Calendar({
@@ -21,6 +25,9 @@ export default function Calendar({
   selectionCounts = {},
   availableDates = [],
   disableDayLogic = true,
+  onDateRemove,
+  daysToRemove = [],
+  isLoggedIn = false,
 }: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -77,6 +84,9 @@ export default function Calendar({
 
   const hasJoined = (date: Date) => joinedDates.includes(formatDate(date));
 
+  const isMarkedForRemoval = (date: Date) =>
+    daysToRemove.includes(formatDate(date));
+
   const isToday = (date: Date) => {
     const today = new Date();
     return date.toDateString() === today.toDateString();
@@ -107,7 +117,16 @@ export default function Calendar({
       return;
     }
 
-    // In trip joining mode, only allow available dates
+    // In trip joining mode, handle different scenarios
+    if (hasJoined(date)) {
+      // For logged-in users, allow clicking on joined days to remove them
+      if (isLoggedIn && onDateRemove) {
+        onDateRemove(dateString);
+      }
+      return;
+    }
+
+    // Only allow available dates for selection
     if (!isAvailable(date)) return;
 
     if (isSelected(date)) {
@@ -120,6 +139,7 @@ export default function Calendar({
   // Determine if day should be clickable
   const isDayClickable = (date: Date) => {
     if (!disableDayLogic) return true; // Trip creation: all days clickable
+    if (hasJoined(date) && isLoggedIn) return true; // Logged-in users can click joined days to remove
     return isAvailable(date); // Trip joining: only available days clickable
   };
 
@@ -139,6 +159,13 @@ export default function Calendar({
 
     // Joined days (already participated)
     if (joined) {
+      if (isLoggedIn) {
+        // For logged-in users, make joined days clickable for removal
+        if (isMarkedForRemoval(date)) {
+          return "border-2 border-red-500 text-white bg-red-600 hover:bg-red-700 cursor-pointer";
+        }
+        return "border-2 border-green-500 text-gray-900 dark:text-white bg-green-100 dark:bg-green-800 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer";
+      }
       return "border-2 border-green-500 text-gray-900 dark:text-white bg-green-700 cursor-not-allowed";
     }
 
@@ -279,6 +306,15 @@ export default function Calendar({
                     <span className="text-xs text-green-600 dark:text-green-400">
                       {selectionCount} Available
                     </span>
+                  )}
+                  {isLoggedIn && hasJoined(day) && (
+                    <div className="absolute top-1 right-1">
+                      {isMarkedForRemoval(day) ? (
+                        <Trash2 className="h-3 w-3 text-red-600" />
+                      ) : (
+                        <Trash2 className="h-3 w-3 text-gray-400 opacity-50" />
+                      )}
+                    </div>
                   )}
                 </div>
               </button>

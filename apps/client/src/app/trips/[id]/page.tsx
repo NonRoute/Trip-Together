@@ -4,7 +4,16 @@ import CalendarComponent from "@/components/ui/Calendar";
 import { useAuth } from "@/contexts/AuthContext";
 import { tripAPI, TripWithDaysAndSelections } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
-import { Calendar, Check, Loader2, MapPin, Plus, User, X } from "lucide-react";
+import {
+  Calendar,
+  Check,
+  Loader2,
+  MapPin,
+  Plus,
+  User,
+  X,
+  Trash2,
+} from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -16,15 +25,20 @@ export default function TripDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [daysToDeselect, setDaysToDeselect] = useState<string[]>([]);
   const [guestName, setGuestName] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeselecting, setIsDeselecting] = useState(false);
   const [selectionCounts, setSelectionCounts] = useState<
     Record<string, number>
   >({});
   const [showSuccess, setShowSuccess] = useState(false);
   const [confirmedSelections, setConfirmedSelections] = useState<string[]>([]);
   const [userSelectedDays, setUserSelectedDays] = useState<string[]>([]);
+  const [userSelectionIds, setUserSelectionIds] = useState<
+    Record<string, number>
+  >({});
   const [guestNameConfirmed, setGuestNameConfirmed] = useState(false);
   const { user } = useAuth();
 
@@ -37,6 +51,7 @@ export default function TripDetailPage() {
         // Calculate selection counts from the trip data
         const counts: Record<string, number> = {};
         const userSelections: string[] = [];
+        const userSelectionIdMap: Record<string, number> = {};
 
         tripData.days.forEach(
           (dayWithSelections: TripWithDaysAndSelections["days"][0]) => {
@@ -44,7 +59,7 @@ export default function TripDetailPage() {
               dayWithSelections.selections.length;
 
             // Check if current user has already selected this day
-            const hasUserSelected = dayWithSelections.selections.some(
+            const userSelection = dayWithSelections.selections.find(
               (selection) => {
                 if (user) {
                   // For logged-in users, check by userId
@@ -56,14 +71,19 @@ export default function TripDetailPage() {
               },
             );
 
-            if (hasUserSelected) {
+            if (userSelection) {
               userSelections.push(dayWithSelections.tripDay.day);
+              if (user && userSelection.id) {
+                userSelectionIdMap[dayWithSelections.tripDay.day] =
+                  userSelection.id;
+              }
             }
           },
         );
 
         setSelectionCounts(counts);
         setUserSelectedDays(userSelections);
+        setUserSelectionIds(userSelectionIdMap);
       } catch {
         setError("Failed to load trip");
       } finally {
@@ -88,8 +108,14 @@ export default function TripDetailPage() {
     setSelectedDays((prev) => prev.filter((d) => d !== date));
   };
 
-  const handleBulkSelection = async () => {
-    if (selectedDays.length === 0) return;
+  const handleDeselectDay = (date: string) => {
+    setDaysToDeselect((prev) =>
+      prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date],
+    );
+  };
+
+  const handleBulkChanges = async () => {
+    if (selectedDays.length === 0 && daysToDeselect.length === 0) return;
 
     // Validate guest name for non-logged-in users
     if (!user && !guestName.trim()) {
@@ -98,40 +124,65 @@ export default function TripDetailPage() {
     }
 
     setIsSubmitting(true);
+    setIsDeselecting(true);
     setError("");
 
     try {
-      // Create selections for all selected days
-      const promises = selectedDays.map(async (date) => {
-        // Find the trip day ID for this date
-        const tripDayWithSelections = trip?.days.find(
-          (dayWithSelections) => dayWithSelections.tripDay.day === date,
-        );
-        if (!tripDayWithSelections) return;
+      // First, handle deselections
+      if (daysToDeselect.length > 0) {
+        const deselectPromises = daysToDeselect.map(async (date) => {
+          const selectionId = userSelectionIds[date];
+          if (!selectionId) return;
 
-        if (user) {
-          // For logged-in users, use the authenticated endpoint
-          await tripAPI.createDaySelection(
+          // Find the trip day ID for this date
+          const tripDayWithSelections = trip?.days.find(
+            (dayWithSelections) => dayWithSelections.tripDay.day === date,
+          );
+          if (!tripDayWithSelections) return;
+
+          await tripAPI.deleteDaySelection(
             tripId,
             tripDayWithSelections.tripDay.id,
-            {
-              notes: notes || undefined,
-            },
+            selectionId,
           );
-        } else {
-          // For guest users, use the guest endpoint
-          await tripAPI.createGuestDaySelection(
-            tripId,
-            tripDayWithSelections.tripDay.id,
-            {
-              guestName: guestName.trim(),
-              notes: notes || undefined,
-            },
-          );
-        }
-      });
+        });
 
-      await Promise.all(promises);
+        await Promise.all(deselectPromises);
+      }
+
+      // Then, handle new selections
+      if (selectedDays.length > 0) {
+        const selectPromises = selectedDays.map(async (date) => {
+          // Find the trip day ID for this date
+          const tripDayWithSelections = trip?.days.find(
+            (dayWithSelections) => dayWithSelections.tripDay.day === date,
+          );
+          if (!tripDayWithSelections) return;
+
+          if (user) {
+            // For logged-in users, use the authenticated endpoint
+            await tripAPI.createDaySelection(
+              tripId,
+              tripDayWithSelections.tripDay.id,
+              {
+                notes: notes || undefined,
+              },
+            );
+          } else {
+            // For guest users, use the guest endpoint
+            await tripAPI.createGuestDaySelection(
+              tripId,
+              tripDayWithSelections.tripDay.id,
+              {
+                guestName: guestName.trim(),
+                notes: notes || undefined,
+              },
+            );
+          }
+        });
+
+        await Promise.all(selectPromises);
+      }
 
       // Store confirmed selections for success screen
       setConfirmedSelections([...selectedDays]);
@@ -140,15 +191,16 @@ export default function TripDetailPage() {
       const updatedTrip = await tripAPI.getTrip(tripId);
       setTrip(updatedTrip);
 
-      // Update selection counts
+      // Update selection counts and user selections
       const counts: Record<string, number> = {};
       const newUserSelections: string[] = [];
+      const newUserSelectionIdMap: Record<string, number> = {};
       updatedTrip.days.forEach(
         (dayWithSelections: TripWithDaysAndSelections["days"][0]) => {
           counts[dayWithSelections.tripDay.day] =
             dayWithSelections.selections.length;
           // Check if current user has already selected this day
-          const hasUserSelected = dayWithSelections.selections.some(
+          const userSelection = dayWithSelections.selections.find(
             (selection) => {
               if (user) {
                 return selection.userId === user.id;
@@ -157,16 +209,22 @@ export default function TripDetailPage() {
               }
             },
           );
-          if (hasUserSelected) {
+          if (userSelection) {
             newUserSelections.push(dayWithSelections.tripDay.day);
+            if (user && userSelection.id) {
+              newUserSelectionIdMap[dayWithSelections.tripDay.day] =
+                userSelection.id;
+            }
           }
         },
       );
       setSelectionCounts(counts);
       setUserSelectedDays(newUserSelections);
+      setUserSelectionIds(newUserSelectionIdMap);
 
       // Reset form and show success
       setSelectedDays([]);
+      setDaysToDeselect([]);
       // Don't clear guest name for guests, just clear notes
       if (user) {
         setGuestName("");
@@ -177,10 +235,11 @@ export default function TripDetailPage() {
       if (err.response?.status === 409) {
         setError("You have already selected one or more of these days");
       } else {
-        setError("Failed to create selections");
+        setError("Failed to update selections");
       }
     } finally {
       setIsSubmitting(false);
+      setIsDeselecting(false);
     }
   };
 
@@ -266,34 +325,40 @@ export default function TripDetailPage() {
                 <Check className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Successfully selected!
+                {confirmedSelections.length > 0
+                  ? "Successfully selected!"
+                  : "Successfully updated!"}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                You have successfully selected available days for this trip.
+                {confirmedSelections.length > 0
+                  ? "You have successfully selected available days for this trip."
+                  : "Your selections have been updated successfully."}
               </p>
             </div>
 
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
-                Your Selected Days:
-              </h3>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {confirmedSelections.map((date) => (
-                  <div
-                    key={date}
-                    className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                  >
-                    <Calendar className="h-4 w-4 mr-2" />
-                    {new Date(date).toLocaleDateString("en-US", {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </div>
-                ))}
+            {confirmedSelections.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
+                  Your Selected Days:
+                </h3>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {confirmedSelections.map((date) => (
+                    <div
+                      key={date}
+                      className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      {new Date(date).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-3">
               <button
@@ -306,10 +371,12 @@ export default function TripDetailPage() {
                 }}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
               >
-                Select More Days
+                {confirmedSelections.length > 0
+                  ? "Select More Days"
+                  : "Continue"}
               </button>
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                You can always come back to select additional days later.
+                You can always come back to manage your selections later.
               </div>
             </div>
           </div>
@@ -484,6 +551,9 @@ export default function TripDetailPage() {
                           (dayWithSelections) => dayWithSelections.tripDay.day,
                         )
                         .filter((date) => !userSelectedDays.includes(date))}
+                      onDateRemove={user ? handleDeselectDay : undefined}
+                      daysToRemove={daysToDeselect}
+                      isLoggedIn={!!user}
                     />
                   </div>
                 </div>
@@ -541,35 +611,43 @@ export default function TripDetailPage() {
                 )}
 
                 <div className="flex space-x-3">
-                  <button
-                    onClick={handleBulkSelection}
-                    disabled={isSubmitting || selectedDays.length === 0}
-                    className="flex-1 flex justify-center items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4 mr-1" />
-                        Confirm Selection ({selectedDays.length} days)
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedDays([]);
-                      setNotes("");
-                      // Don't clear guest name for guests, just reset the confirmation
-                      if (!user) {
-                        setGuestNameConfirmed(false);
-                      } else {
-                        setGuestName("");
-                      }
-                    }}
-                    className="px-4 py-2 border border-gray-300 text-white rounded-md hover:bg-gray-500"
-                  >
-                    Cancel
-                  </button>
+                  {selectedDays.length > 0 ? (
+                    <>
+                      <button
+                        onClick={handleBulkChanges}
+                        disabled={isSubmitting}
+                        className="flex-1 flex justify-center items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isSubmitting ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Check className="h-4 w-4 mr-1" />
+                            Confirm Selection ({selectedDays.length} days)
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedDays([]);
+                          setNotes("");
+                          // Don't clear guest name for guests, just reset the confirmation
+                          if (!user) {
+                            setGuestNameConfirmed(false);
+                          } else {
+                            setGuestName("");
+                          }
+                        }}
+                        className="px-4 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <div className="text-sm text-gray-500 dark:text-gray-400 italic">
+                      Select days to join this trip
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -589,17 +667,62 @@ export default function TripDetailPage() {
                     <h4 className="text-sm font-medium text-green-900 dark:text-green-100 mb-2">
                       Your Current Selections:
                     </h4>
+                    <p className="text-xs text-green-700 dark:text-green-300 mb-3">
+                      💡 Click on any day below to remove it from your
+                      selections, or use the calendar below to add/remove days
+                    </p>
                     <div className="flex flex-wrap gap-2">
-                      {userSelectedDays.map((date) => (
-                        <span
-                          key={date}
-                          className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
-                        >
-                          <Check className="h-3 w-3 mr-1" />
-                          {formatDate(date)}
-                        </span>
-                      ))}
+                      {userSelectedDays.map((date) => {
+                        const isMarkedForDeselection =
+                          daysToDeselect.includes(date);
+                        return (
+                          <button
+                            key={date}
+                            onClick={() => handleDeselectDay(date)}
+                            className={cn(
+                              "inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 border-2 cursor-pointer",
+                              isMarkedForDeselection
+                                ? "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100 border-red-400 dark:border-red-500 shadow-md scale-105"
+                                : "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 border-green-300 dark:border-green-600 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-500 hover:scale-105",
+                            )}
+                            title={
+                              isMarkedForDeselection
+                                ? "Click to keep this day"
+                                : "Click to remove this day"
+                            }
+                          >
+                            {isMarkedForDeselection ? (
+                              <Trash2 className="h-4 w-4 mr-2" />
+                            ) : (
+                              <Trash2 className="h-4 w-4 mr-2 opacity-50" />
+                            )}
+                            {formatDate(date)}
+                          </button>
+                        );
+                      })}
                     </div>
+                    {daysToDeselect.length > 0 && (
+                      <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-md border-2 border-red-200 dark:border-red-800 shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400 mr-3" />
+                            <div>
+                              <span className="text-sm font-semibold text-red-700 dark:text-red-300">
+                                {daysToDeselect.length} day(s) marked for
+                                removal
+                              </span>
+                              <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                Click &quot;Confirm Changes&quot; below to apply
+                                these changes
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-xs text-red-600 dark:text-red-400 font-medium">
+                            ⚠️ Pending
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -614,6 +737,13 @@ export default function TripDetailPage() {
                     <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-3">
                       All Available Trip Days ({trip.days.length} total)
                     </h4>
+                    {user && userSelectedDays.length > 0 && (
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
+                        💡 Your selected days are shown in green above. Click
+                        the trash icon to remove them, or use the calendar below
+                        to add/remove days.
+                      </p>
+                    )}
                     <div className="flex flex-wrap gap-2">
                       {trip.days.map((dayWithSelections) => {
                         const isAlreadySelected = userSelectedDays.includes(
@@ -622,13 +752,21 @@ export default function TripDetailPage() {
                         const isCurrentlySelected = selectedDays.includes(
                           dayWithSelections.tripDay.day,
                         );
+                        const isMarkedForDeselection = daysToDeselect.includes(
+                          dayWithSelections.tripDay.day,
+                        );
 
                         return (
                           <button
                             key={dayWithSelections.tripDay.id}
                             onClick={() => {
                               if (isAlreadySelected) {
-                                // Don't allow clicking on already selected days
+                                // For logged-in users, allow clicking to deselect
+                                if (user) {
+                                  handleDeselectDay(
+                                    dayWithSelections.tripDay.day,
+                                  );
+                                }
                                 return;
                               }
                               if (isCurrentlySelected) {
@@ -639,22 +777,34 @@ export default function TripDetailPage() {
                                 handleDateSelect(dayWithSelections.tripDay.day);
                               }
                             }}
-                            disabled={isAlreadySelected}
+                            disabled={!user && isAlreadySelected}
                             className={cn(
-                              "inline-flex items-center px-3 py-2 rounded-md text-sm font-medium border-2 transition-colors",
+                              "inline-flex items-center px-3 py-2 rounded-md text-sm font-medium border-2 transition-all duration-200",
                               isAlreadySelected
-                                ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700 cursor-not-allowed"
+                                ? user
+                                  ? isMarkedForDeselection
+                                    ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-400 dark:border-red-600 cursor-pointer hover:bg-red-200 dark:hover:bg-red-800"
+                                    : "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-500"
+                                  : "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700 cursor-not-allowed"
                                 : isCurrentlySelected
                                 ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 cursor-pointer"
                                 : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer",
                             )}
+                            title={
+                              isAlreadySelected && user
+                                ? "Click the trash icon to remove this day"
+                                : undefined
+                            }
                           >
                             <span>
                               {formatDate(dayWithSelections.tripDay.day)}
                             </span>
-                            {isAlreadySelected && (
-                              <Check className="ml-1 h-4 w-4" />
-                            )}
+                            {isAlreadySelected &&
+                              (isMarkedForDeselection ? (
+                                <Trash2 className="ml-1 h-4 w-4" />
+                              ) : (
+                                <Trash2 className="ml-1 h-4 w-4 opacity-50" />
+                              ))}
                             <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                               {selectionCounts[dayWithSelections.tripDay.day] ||
                                 0}{" "}
@@ -678,6 +828,9 @@ export default function TripDetailPage() {
                           (dayWithSelections) => dayWithSelections.tripDay.day,
                         )
                         .filter((date) => !userSelectedDays.includes(date))}
+                      onDateRemove={user ? handleDeselectDay : undefined}
+                      daysToRemove={daysToDeselect}
+                      isLoggedIn={!!user}
                     />
                   </div>
                 </div>
@@ -735,35 +888,57 @@ export default function TripDetailPage() {
                 )}
 
                 <div className="flex space-x-3">
-                  <button
-                    onClick={handleBulkSelection}
-                    disabled={isSubmitting || selectedDays.length === 0}
-                    className="flex-1 flex justify-center items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4 mr-1" />
-                        Confirm Selection ({selectedDays.length} days)
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedDays([]);
-                      setNotes("");
-                      // Don't clear guest name for guests, just reset the confirmation
-                      if (!user) {
-                        setGuestNameConfirmed(false);
-                      } else {
-                        setGuestName("");
-                      }
-                    }}
-                    className="px-4 py-2 border border-gray-300 text-white rounded-md hover:bg-gray-500"
-                  >
-                    Cancel
-                  </button>
+                  {selectedDays.length > 0 || daysToDeselect.length > 0 ? (
+                    <>
+                      <button
+                        onClick={handleBulkChanges}
+                        disabled={isSubmitting || isDeselecting}
+                        className="flex-1 flex justify-center items-center px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg transition-all duration-200 hover:shadow-xl"
+                      >
+                        {isSubmitting || isDeselecting ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Check className="h-4 w-4 mr-2" />
+                            <span className="font-medium">
+                              Confirm Changes (
+                              {selectedDays.length > 0
+                                ? `${selectedDays.length} add`
+                                : ""}
+                              {selectedDays.length > 0 &&
+                              daysToDeselect.length > 0
+                                ? ", "
+                                : ""}
+                              {daysToDeselect.length > 0
+                                ? `${daysToDeselect.length} remove`
+                                : ""}
+                              )
+                            </span>
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedDays([]);
+                          setDaysToDeselect([]);
+                          setNotes("");
+                          // Don't clear guest name for guests, just reset the confirmation
+                          if (!user) {
+                            setGuestNameConfirmed(false);
+                          } else {
+                            setGuestName("");
+                          }
+                        }}
+                        className="px-6 py-3 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <div className="w-full text-center py-4 text-sm text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-800 rounded-md border border-dashed border-gray-300 dark:border-gray-600">
+                      💡 Select days to add or remove to make changes
+                    </div>
+                  )}
                 </div>
               </div>
             )}
