@@ -277,7 +277,7 @@ export default function Calendar({
                   )}
                   {hasSelections && (
                     <span className="text-xs text-green-600 dark:text-green-400">
-                      {selectionCount} Joins
+                      {selectionCount} Available
                     </span>
                   )}
                 </div>
@@ -301,7 +301,7 @@ export default function Calendar({
           {disableDayLogic && (
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 border-2 border-green-500 rounded"></div>
-              <span>Joined</span>
+              <span>Available</span>
             </div>
           )}
         </div>

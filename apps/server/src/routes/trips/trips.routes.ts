@@ -108,7 +108,7 @@ export const createTrip = createRoute({
 
 export const getTrips = createRoute({
   method: "get",
-  path: "/",
+  path: "/trips",
   tags,
   responses: {
     200: {

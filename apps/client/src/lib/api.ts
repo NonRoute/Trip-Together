@@ -152,7 +152,7 @@ export const authAPI = {
 // Trip API functions
 export const tripAPI = {
   getAllTrips: async () => {
-    const response = await api.get("/trip");
+    const response = await api.get("/trip/trips");
     return response.data;
   },
 

@@ -13,8 +13,8 @@ interface TripCardProps {
 export default function TripCard({ trip }: TripCardProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
-      <div className="p-6">
-        <div className="flex items-start justify-between mb-4">
+      <div className="p-6 flex flex-col justify-end h-full">
+        <div className="flex items-start justify-between mb-auto">
           <div className="flex-1">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
               {trip.title}

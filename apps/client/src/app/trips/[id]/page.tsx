@@ -167,7 +167,10 @@ export default function TripDetailPage() {
 
       // Reset form and show success
       setSelectedDays([]);
-      setGuestName("");
+      // Don't clear guest name for guests, just clear notes
+      if (user) {
+        setGuestName("");
+      }
       setNotes("");
       setShowSuccess(true);
     } catch (err: any) {
@@ -233,15 +236,6 @@ export default function TripDetailPage() {
               </p>
             )}
           </div>
-          <span
-            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-              trip.trip.isActive
-                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
-            }`}
-          >
-            {trip.trip.isActive ? "Active" : "Inactive"}
-          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -272,10 +266,10 @@ export default function TripDetailPage() {
                 <Check className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Successfully Joined!
+                Successfully selected!
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                You have successfully joined this trip for the selected days.
+                You have successfully selected available days for this trip.
               </p>
             </div>
 
@@ -303,7 +297,13 @@ export default function TripDetailPage() {
 
             <div className="space-y-3">
               <button
-                onClick={() => setShowSuccess(false)}
+                onClick={() => {
+                  setShowSuccess(false);
+                  // Preserve guest name when selecting more days
+                  if (!user) {
+                    setGuestNameConfirmed(true);
+                  }
+                }}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
               >
                 Select More Days
@@ -464,7 +464,7 @@ export default function TripDetailPage() {
                             <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                               {selectionCounts[dayWithSelections.tripDay.day] ||
                                 0}{" "}
-                              joined
+                              available
                             </span>
                           </button>
                         );
@@ -558,8 +558,13 @@ export default function TripDetailPage() {
                   <button
                     onClick={() => {
                       setSelectedDays([]);
-                      setGuestName("");
                       setNotes("");
+                      // Don't clear guest name for guests, just reset the confirmation
+                      if (!user) {
+                        setGuestNameConfirmed(false);
+                      } else {
+                        setGuestName("");
+                      }
                     }}
                     className="px-4 py-2 border border-gray-300 text-white rounded-md hover:bg-gray-500"
                   >
@@ -653,7 +658,7 @@ export default function TripDetailPage() {
                             <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                               {selectionCounts[dayWithSelections.tripDay.day] ||
                                 0}{" "}
-                              joined
+                              Available
                             </span>
                           </button>
                         );
@@ -748,6 +753,12 @@ export default function TripDetailPage() {
                     onClick={() => {
                       setSelectedDays([]);
                       setNotes("");
+                      // Don't clear guest name for guests, just reset the confirmation
+                      if (!user) {
+                        setGuestNameConfirmed(false);
+                      } else {
+                        setGuestName("");
+                      }
                     }}
                     className="px-4 py-2 border border-gray-300 text-white rounded-md hover:bg-gray-500"
                   >
@@ -788,12 +799,12 @@ export default function TripDetailPage() {
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
                         {selectionCounts[dayWithSelections.tripDay.day] || 0}{" "}
-                        people joined
+                        people available
                       </div>
                       {isUserSelected && (
                         <div className="mt-1">
                           <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                            ✓ You&apos;re joined
+                            ✓ You&apos;re available
                           </span>
                         </div>
                       )}
