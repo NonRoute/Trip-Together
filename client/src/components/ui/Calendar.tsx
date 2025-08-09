@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, UserRound } from "lucide-react";
 
 interface CalendarProps {
   selectedDates: string[];
@@ -303,8 +303,9 @@ export default function Calendar({
                     </span>
                   )}
                   {hasSelections && (
-                    <span className="text-xs text-green-600 dark:text-green-400">
-                      {selectionCount} Available
+                    <span className="text-xs text-green-600 dark:text-green-400 flex items-center">
+                      <UserRound className="h-3 w-3 mr-1" />
+                      {selectionCount}
                     </span>
                   )}
                   {isLoggedIn && hasJoined(day) && (
@@ -327,19 +328,13 @@ export default function Calendar({
           {disableDayLogic && (
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 border-2 border-green-300 rounded"></div>
-              <span>Available</span>
+              <span>Selectable</span>
             </div>
           )}
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 bg-blue-600 rounded"></div>
             <span>Selected</span>
           </div>
-          {disableDayLogic && (
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 border-2 border-green-500 rounded"></div>
-              <span>Available</span>
-            </div>
-          )}
         </div>
       </div>
     </div>

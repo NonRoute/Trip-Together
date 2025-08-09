@@ -13,6 +13,7 @@ import {
   User,
   X,
   Trash2,
+  UserRound,
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
@@ -558,7 +559,8 @@ export default function TripDetailPage() {
                                 )}
                               />
                             )}
-                            <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                            <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center">
+                              <UserRound className="h-3 w-3 mr-1" />
                               {selectionCounts[dateStr] || 0}
                             </span>
                           </button>
@@ -737,9 +739,9 @@ export default function TripDetailPage() {
                       <div className="font-medium text-gray-900 dark:text-white">
                         {formatDate(dayWithSelections.tripDay.day)}
                       </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {selectionCounts[dayWithSelections.tripDay.day] || 0}{" "}
-                        people available
+                      <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                        <UserRound className="h-3 w-3 mr-1" />
+                        {selectionCounts[dayWithSelections.tripDay.day] || 0}
                       </div>
                       {isUserSelected && (
                         <div className="mt-1">
