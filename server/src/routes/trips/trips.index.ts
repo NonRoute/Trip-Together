@@ -167,6 +167,31 @@ router.openapi(tripRoutes.getTrip, async (c) => {
   );
 });
 
+// Delete a trip (only creator)
+router.openapi(tripRoutes.deleteTrip, async (c) => {
+  const { tripId } = c.req.valid("param");
+  const userId = (c.var as any).userId;
+
+  // Verify trip exists and belongs to user
+  const trip = await db
+    .select()
+    .from(tripsTable)
+    .where(and(eq(tripsTable.id, tripId), eq(tripsTable.creatorId, userId)))
+    .limit(1);
+
+  if (!trip.length) {
+    return c.json(
+      { error: "Trip not found or you don't have permission" },
+      404,
+    );
+  }
+
+  // Deleting trip will cascade delete trip days and selections due to FK constraints
+  await db.delete(tripsTable).where(eq(tripsTable.id, tripId));
+
+  return c.json({ message: "Trip deleted successfully" }, 200);
+});
+
 // Add a day to a trip
 router.openapi(tripRoutes.addTripDay, async (c) => {
   const { tripId } = c.req.valid("param");

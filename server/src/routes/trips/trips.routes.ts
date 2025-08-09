@@ -277,6 +277,71 @@ export const getTrip = createRoute({
   },
 });
 
+export const deleteTrip = createRoute({
+  method: "delete",
+  path: "/{tripId}",
+  middleware: [authMiddleware],
+  tags,
+  security: [
+    {
+      BearerAuth: [],
+    },
+  ],
+  request: {
+    params: z.object({
+      tripId: z.coerce.number().openapi({
+        type: "number",
+        description: "Trip ID",
+        example: 1,
+        param: {
+          name: "tripId",
+          in: "path",
+        },
+      }),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: tripSchemas.success,
+          example: {
+            message: "Trip deleted successfully",
+          },
+        },
+      },
+      description: "Trip deleted successfully",
+    },
+    401: {
+      content: {
+        "application/json": {
+          schema: tripSchemas.error,
+        },
+      },
+      description: "Unauthorized",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: tripSchemas.error,
+          example: {
+            error: "Trip not found or you don't have permission",
+          },
+        },
+      },
+      description: "Trip not found or no permission",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: tripSchemas.error,
+        },
+      },
+      description: "Internal server error",
+    },
+  },
+});
+
 export const addTripDay = createRoute({
   method: "post",
   path: "/{tripId}/days",

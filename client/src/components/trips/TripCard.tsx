@@ -5,14 +5,42 @@ import { formatDate } from "@/lib/utils";
 import { TripWithCreator } from "@repo/types/schema/trips";
 import { Calendar, MapPin, User } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import { tripAPI } from "@/lib/api";
+import { Loader2, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 interface TripCardProps {
   trip: TripWithCreator;
+  onDeleted?: (tripId: number) => void;
 }
 
-export default function TripCard({ trip }: TripCardProps) {
+export default function TripCard({ trip, onDeleted }: TripCardProps) {
+  const { user } = useAuth();
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const canDelete = user && user.id === trip.creatorId;
+
+  const handleDelete = async () => {
+    if (!canDelete) return;
+    const confirmed = window.confirm(
+      "Delete this trip? This will remove all its days and selections.",
+    );
+    if (!confirmed) return;
+    try {
+      setIsDeleting(true);
+      await tripAPI.deleteTrip(trip.id);
+      onDeleted?.(trip.id);
+    } catch {
+      // optional: surface error
+      alert("Failed to delete trip");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
+    <div className="group bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
       <div className="p-6 flex flex-col justify-end h-full">
         <div className="flex items-start justify-between mb-auto">
           <div className="flex-1">
@@ -25,6 +53,23 @@ export default function TripCard({ trip }: TripCardProps) {
               </p>
             )}
           </div>
+          {canDelete && (
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              aria-label="Delete trip"
+              className={`ml-2 inline-flex items-center p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 transition-opacity group-hover:opacity-100 ${
+                isDeleting ? "opacity-100" : ""
+              }`}
+              title="Delete trip"
+            >
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+            </button>
+          )}
         </div>
 
         <div className="space-y-2 mb-4">

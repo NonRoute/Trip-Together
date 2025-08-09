@@ -171,6 +171,11 @@ export const tripAPI = {
     return response.data;
   },
 
+  deleteTrip: async (tripId: number) => {
+    const response = await api.delete(`/trip/${tripId}`);
+    return response.data;
+  },
+
   addTripDay: async (tripId: number, data: { day: string }) => {
     const response = await api.post(`/trip/${tripId}/days`, data);
     return response.data;

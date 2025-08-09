@@ -15,6 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +42,8 @@ export default function TripDetailPage() {
   >({});
   const [guestNameConfirmed, setGuestNameConfirmed] = useState(false);
   const { user } = useAuth();
+  const router = useRouter();
+  const [deletingTrip, setDeletingTrip] = useState(false);
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -295,17 +298,46 @@ export default function TripDetailPage() {
               </p>
             )}
           </div>
+          {user && user.id === trip.trip.creatorId && (
+            <button
+              onClick={async () => {
+                const ok = window.confirm(
+                  "Delete this trip? This will remove all its days and selections.",
+                );
+                if (!ok) return;
+                try {
+                  setDeletingTrip(true);
+                  await tripAPI.deleteTrip(trip.trip.id);
+                  router.push("/");
+                } catch {
+                  alert("Failed to delete trip");
+                } finally {
+                  setDeletingTrip(false);
+                }
+              }}
+              disabled={deletingTrip}
+              aria-label="Delete trip"
+              className="inline-flex items-center p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50"
+              title="Delete trip"
+            >
+              {deletingTrip ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {trip.trip.destination && (
-            <div className="flex items-center text-gray-600 dark:text-gray-400">
-              <MapPin className="h-5 w-5 mr-2" />
+            <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm">
+              <MapPin className="h-4 w-4 mr-2" />
               <span>{trip.trip.destination}</span>
             </div>
           )}
-          <div className="flex items-center text-gray-600 dark:text-gray-400">
-            <Calendar className="h-5 w-5 mr-2" />
+          <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm">
+            <Calendar className="h-4 w-4 mr-2" />
             <span>Created {formatDate(trip.trip.createdAt)}</span>
           </div>
         </div>
