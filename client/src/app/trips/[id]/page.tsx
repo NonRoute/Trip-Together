@@ -308,10 +308,6 @@ export default function TripDetailPage() {
             <Calendar className="h-5 w-5 mr-2" />
             <span>Created {formatDate(trip.trip.createdAt)}</span>
           </div>
-          <div className="flex items-center text-gray-600 dark:text-gray-400">
-            <User className="h-5 w-5 mr-2" />
-            <span>Creator ID: {trip.trip.creatorId}</span>
-          </div>
         </div>
       </div>
 
@@ -382,85 +378,69 @@ export default function TripDetailPage() {
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Select Your Available Days
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  Choose the days you&apos;re available for this trip
-                </p>
-              </div>
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Availability
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Pick the days you can join.
+              </p>
             </div>
 
             {/* After confirming name, show selection UI or already selected message */}
             {!user && guestNameConfirmed && guestSelectedDay ? (
-              <div className="mb-6 p-6 bg-yellow-50 dark:bg-yellow-900/20 rounded-md text-center">
-                <h3 className="text-lg font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-                  You have already selected your available day for this trip
-                </h3>
-                <div className="text-md text-gray-800 dark:text-gray-100 mb-2">
-                  <Calendar className="inline h-5 w-5 mr-1" />
+              <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-md flex items-center justify-between">
+                <div className="text-sm">
+                  <span className="mr-2">You already selected:</span>
                   <span className="font-semibold">
                     {formatDate(guestSelectedDay)}
                   </span>
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                  If you need to change your selection, please contact the trip
-                  organizer.
-                </div>
                 <button
-                  className="mt-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                  className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 rounded-md text-sm"
                   onClick={() => setGuestNameConfirmed(false)}
                 >
-                  Change Name
+                  Change name
                 </button>
               </div>
             ) : null}
 
             {/* Guest Name Input - Show when guest hasn't confirmed name yet */}
             {!user && !guestNameConfirmed && (
-              <div className="mb-6 p-6 bg-gray-50 dark:bg-gray-700 rounded-md">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                  Join This Trip as Guest
-                </h3>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Your Name <span className="text-red-500">*</span>
-                  </label>
+              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-md">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Your name
+                </label>
+                <div className="flex gap-2">
                   <input
                     type="text"
                     value={guestName}
                     onChange={(e) => setGuestName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter your name"
-                    required
                   />
                   <button
-                    className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:opacity-50"
                     disabled={!guestName.trim()}
                     onClick={() => setGuestNameConfirmed(true)}
                   >
                     Continue
                   </button>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Required for guest users to join the trip
-                  </p>
                 </div>
               </div>
             )}
 
-            {/* Selection Form - Show when guest has confirmed name and hasn't selected a day yet */}
-            {!user && guestNameConfirmed && !guestSelectedDay && (
+            {/* Selection Form - Unified for user or confirmed guest */}
+            {(user || (!user && guestNameConfirmed && !guestSelectedDay)) && (
               <div className="mb-6 p-6 bg-gray-50 dark:bg-gray-700 rounded-md">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                  Join This Trip
+                  Choose days
                 </h3>
 
-                <div className="space-y-4 mb-6">
-                  <div>
+                {!user && (
+                  <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Your Name
+                      Your name
                     </label>
                     <div className="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-600 rounded border">
                       <span className="text-gray-900 dark:text-white">
@@ -474,70 +454,100 @@ export default function TripDetailPage() {
                       </button>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Calendar component */}
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Select Available Days
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Select available days
                   </label>
+                  {user && userSelectedDays.length > 0 && (
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mb-2">
+                      Your days are in green. Click a green chip to mark it for
+                      removal.
+                    </p>
+                  )}
 
-                  {/* All Available Days Overview */}
-                  <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-3">
-                      All Available Trip Days ({trip.days.length} total)
-                    </h4>
+                  {/* Overview chips */}
+                  <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
                     <div className="flex flex-wrap gap-2">
                       {trip.days.map((dayWithSelections) => {
-                        const isAlreadySelected = userSelectedDays.includes(
-                          dayWithSelections.tripDay.day,
-                        );
-                        const isCurrentlySelected = selectedDays.includes(
-                          dayWithSelections.tripDay.day,
-                        );
+                        const dateStr = dayWithSelections.tripDay.day;
+                        const isAlreadySelected =
+                          userSelectedDays.includes(dateStr);
+                        const isCurrentlySelected =
+                          selectedDays.includes(dateStr);
+                        const isMarkedForDeselection =
+                          daysToDeselect.includes(dateStr);
 
                         return (
                           <button
                             key={dayWithSelections.tripDay.id}
                             onClick={() => {
                               if (isAlreadySelected) {
-                                // Don't allow clicking on already selected days
+                                if (user) handleDeselectDay(dateStr);
                                 return;
                               }
                               if (isCurrentlySelected) {
-                                handleDateDeselect(
-                                  dayWithSelections.tripDay.day,
-                                );
+                                handleDateDeselect(dateStr);
                               } else {
-                                handleDateSelect(dayWithSelections.tripDay.day);
+                                handleDateSelect(dateStr);
                               }
                             }}
-                            disabled={isAlreadySelected}
+                            disabled={!user && isAlreadySelected}
                             className={cn(
-                              "inline-flex items-center px-3 py-2 rounded-md text-sm font-medium border-2 transition-colors",
+                              "inline-flex items-center px-3 py-2 rounded-md text-sm font-medium border transition-colors cursor-pointer",
                               isAlreadySelected
-                                ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700 cursor-not-allowed"
+                                ? user
+                                  ? isMarkedForDeselection
+                                    ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-300"
+                                    : "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300"
+                                  : "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 cursor-not-allowed"
                                 : isCurrentlySelected
-                                ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 cursor-pointer"
-                                : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer",
+                                ? "bg-blue-600 text-white border-blue-600"
+                                : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 hover:border-blue-400",
                             )}
+                            title={
+                              isAlreadySelected && user
+                                ? isMarkedForDeselection
+                                  ? "Click to keep this day"
+                                  : "Click to remove this day"
+                                : undefined
+                            }
                           >
-                            <span>
-                              {formatDate(dayWithSelections.tripDay.day)}
-                            </span>
-                            {isAlreadySelected && (
-                              <Check className="ml-1 h-4 w-4" />
+                            <span>{formatDate(dateStr)}</span>
+                            {isAlreadySelected && user && (
+                              <Trash2
+                                className={cn(
+                                  "ml-2 h-4 w-4",
+                                  isMarkedForDeselection
+                                    ? "text-red-600"
+                                    : "opacity-60",
+                                )}
+                              />
                             )}
                             <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-                              {selectionCounts[dayWithSelections.tripDay.day] ||
-                                0}{" "}
-                              available
+                              {selectionCounts[dateStr] || 0}
                             </span>
                           </button>
                         );
                       })}
                     </div>
                   </div>
+
+                  {user && daysToDeselect.length > 0 && (
+                    <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-md border border-red-200 dark:border-red-800 flex items-center justify-between">
+                      <div className="text-sm text-red-700 dark:text-red-300">
+                        {daysToDeselect.length} day(s) marked for removal
+                      </div>
+                      <button
+                        className="text-xs text-red-700 dark:text-red-300 underline"
+                        onClick={() => setDaysToDeselect([])}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  )}
 
                   <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
                     <CalendarComponent
@@ -547,9 +557,7 @@ export default function TripDetailPage() {
                       onDateDeselect={handleDateDeselect}
                       selectionCounts={selectionCounts}
                       availableDates={trip.days
-                        .map(
-                          (dayWithSelections) => dayWithSelections.tripDay.day,
-                        )
+                        .map((d) => d.tripDay.day)
                         .filter((date) => !userSelectedDays.includes(date))}
                       onDateRemove={user ? handleDeselectDay : undefined}
                       daysToRemove={daysToDeselect}
@@ -560,30 +568,29 @@ export default function TripDetailPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Notes (optional)
+                    Notes
                   </label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Add any notes or comments"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Optional"
                   />
                 </div>
 
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    Selected Dates ({selectedDays.length})
+                    Selected ({selectedDays.length})
                   </span>
                   <button
                     type="button"
                     onClick={() => setSelectedDays([])}
-                    className="text-xs text-blue-400 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                    className="text-xs text-blue-500 hover:text-blue-700"
                   >
                     Clear all
                   </button>
                 </div>
-                {/* Selected dates display */}
                 {selectedDays.length > 0 && (
                   <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
                     <div className="flex flex-wrap gap-2">
@@ -611,27 +618,42 @@ export default function TripDetailPage() {
                 )}
 
                 <div className="flex space-x-3">
-                  {selectedDays.length > 0 ? (
+                  {selectedDays.length > 0 ||
+                  (user && daysToDeselect.length > 0) ? (
                     <>
                       <button
                         onClick={handleBulkChanges}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isDeselecting}
                         className="flex-1 flex justify-center items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {isSubmitting ? (
+                        {isSubmitting || isDeselecting ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <>
-                            <Check className="h-4 w-4 mr-1" />
-                            Confirm Selection ({selectedDays.length} days)
+                            <Check className="h-4 w-4 mr-2" />
+                            {user
+                              ? `Confirm changes${
+                                  selectedDays.length
+                                    ? ` (+${selectedDays.length})`
+                                    : ""
+                                }${
+                                  daysToDeselect.length
+                                    ? ` (-${daysToDeselect.length})`
+                                    : ""
+                                }`
+                              : `Confirm selection${
+                                  selectedDays.length
+                                    ? ` (${selectedDays.length})`
+                                    : ""
+                                }`}
                           </>
                         )}
                       </button>
                       <button
                         onClick={() => {
                           setSelectedDays([]);
+                          setDaysToDeselect([]);
                           setNotes("");
-                          // Don't clear guest name for guests, just reset the confirmation
                           if (!user) {
                             setGuestNameConfirmed(false);
                           } else {
@@ -644,304 +666,15 @@ export default function TripDetailPage() {
                       </button>
                     </>
                   ) : (
-                    <div className="text-sm text-gray-500 dark:text-gray-400 italic">
-                      Select days to join this trip
+                    <div className="w-full text-center py-3 text-sm text-gray-500 dark:text-gray-400 italic">
+                      Select days to continue
                     </div>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Selection Form for Logged-in Users */}
-            {user && (
-              <div className="mb-6 p-6 bg-gray-50 dark:bg-gray-700 rounded-md">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                  {userSelectedDays.length > 0
-                    ? "Add More Available Days"
-                    : "Join This Trip"}
-                </h3>
-
-                {/* Show existing selections for logged-in users */}
-                {userSelectedDays.length > 0 && (
-                  <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-md">
-                    <h4 className="text-sm font-medium text-green-900 dark:text-green-100 mb-2">
-                      Your Current Selections:
-                    </h4>
-                    <p className="text-xs text-green-700 dark:text-green-300 mb-3">
-                      💡 Click on any day below to remove it from your
-                      selections, or use the calendar below to add/remove days
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {userSelectedDays.map((date) => {
-                        const isMarkedForDeselection =
-                          daysToDeselect.includes(date);
-                        return (
-                          <button
-                            key={date}
-                            onClick={() => handleDeselectDay(date)}
-                            className={cn(
-                              "inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 border-2 cursor-pointer",
-                              isMarkedForDeselection
-                                ? "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100 border-red-400 dark:border-red-500 shadow-md scale-105"
-                                : "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 border-green-300 dark:border-green-600 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-500 hover:scale-105",
-                            )}
-                            title={
-                              isMarkedForDeselection
-                                ? "Click to keep this day"
-                                : "Click to remove this day"
-                            }
-                          >
-                            {isMarkedForDeselection ? (
-                              <Trash2 className="h-4 w-4 mr-2" />
-                            ) : (
-                              <Trash2 className="h-4 w-4 mr-2 opacity-50" />
-                            )}
-                            {formatDate(date)}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {daysToDeselect.length > 0 && (
-                      <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-md border-2 border-red-200 dark:border-red-800 shadow-sm">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400 mr-3" />
-                            <div>
-                              <span className="text-sm font-semibold text-red-700 dark:text-red-300">
-                                {daysToDeselect.length} day(s) marked for
-                                removal
-                              </span>
-                              <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                                Click &quot;Confirm Changes&quot; below to apply
-                                these changes
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-xs text-red-600 dark:text-red-400 font-medium">
-                            ⚠️ Pending
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Calendar component */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Select Available Days
-                  </label>
-
-                  {/* All Available Days Overview */}
-                  <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-3">
-                      All Available Trip Days ({trip.days.length} total)
-                    </h4>
-                    {user && userSelectedDays.length > 0 && (
-                      <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
-                        💡 Your selected days are shown in green above. Click
-                        the trash icon to remove them, or use the calendar below
-                        to add/remove days.
-                      </p>
-                    )}
-                    <div className="flex flex-wrap gap-2">
-                      {trip.days.map((dayWithSelections) => {
-                        const isAlreadySelected = userSelectedDays.includes(
-                          dayWithSelections.tripDay.day,
-                        );
-                        const isCurrentlySelected = selectedDays.includes(
-                          dayWithSelections.tripDay.day,
-                        );
-                        const isMarkedForDeselection = daysToDeselect.includes(
-                          dayWithSelections.tripDay.day,
-                        );
-
-                        return (
-                          <button
-                            key={dayWithSelections.tripDay.id}
-                            onClick={() => {
-                              if (isAlreadySelected) {
-                                // For logged-in users, allow clicking to deselect
-                                if (user) {
-                                  handleDeselectDay(
-                                    dayWithSelections.tripDay.day,
-                                  );
-                                }
-                                return;
-                              }
-                              if (isCurrentlySelected) {
-                                handleDateDeselect(
-                                  dayWithSelections.tripDay.day,
-                                );
-                              } else {
-                                handleDateSelect(dayWithSelections.tripDay.day);
-                              }
-                            }}
-                            disabled={!user && isAlreadySelected}
-                            className={cn(
-                              "inline-flex items-center px-3 py-2 rounded-md text-sm font-medium border-2 transition-all duration-200",
-                              isAlreadySelected
-                                ? user
-                                  ? isMarkedForDeselection
-                                    ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-400 dark:border-red-600 cursor-pointer hover:bg-red-200 dark:hover:bg-red-800"
-                                    : "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-500"
-                                  : "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700 cursor-not-allowed"
-                                : isCurrentlySelected
-                                ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 cursor-pointer"
-                                : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer",
-                            )}
-                            title={
-                              isAlreadySelected && user
-                                ? "Click the trash icon to remove this day"
-                                : undefined
-                            }
-                          >
-                            <span>
-                              {formatDate(dayWithSelections.tripDay.day)}
-                            </span>
-                            {isAlreadySelected &&
-                              (isMarkedForDeselection ? (
-                                <Trash2 className="ml-1 h-4 w-4" />
-                              ) : (
-                                <Trash2 className="ml-1 h-4 w-4 opacity-50" />
-                              ))}
-                            <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-                              {selectionCounts[dayWithSelections.tripDay.day] ||
-                                0}{" "}
-                              Available
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
-                    <CalendarComponent
-                      selectedDates={selectedDays}
-                      joinedDates={userSelectedDays}
-                      onDateSelect={handleDateSelect}
-                      onDateDeselect={handleDateDeselect}
-                      selectionCounts={selectionCounts}
-                      availableDates={trip.days
-                        .map(
-                          (dayWithSelections) => dayWithSelections.tripDay.day,
-                        )
-                        .filter((date) => !userSelectedDays.includes(date))}
-                      onDateRemove={user ? handleDeselectDay : undefined}
-                      daysToRemove={daysToDeselect}
-                      isLoggedIn={!!user}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Notes (optional)
-                  </label>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Add any notes or comments"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    Selected Dates ({selectedDays.length})
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDays([])}
-                    className="text-xs text-blue-400 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
-                  >
-                    Clear all
-                  </button>
-                </div>
-                {/* Selected dates display */}
-                {selectedDays.length > 0 && (
-                  <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-                    <div className="flex flex-wrap gap-2">
-                      {selectedDays.map((date) => (
-                        <span
-                          key={date}
-                          className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100"
-                        >
-                          {new Date(date).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                          <button
-                            type="button"
-                            onClick={() => handleDateDeselect(date)}
-                            className="ml-1 text-blue-400 hover:text-blue-800"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex space-x-3">
-                  {selectedDays.length > 0 || daysToDeselect.length > 0 ? (
-                    <>
-                      <button
-                        onClick={handleBulkChanges}
-                        disabled={isSubmitting || isDeselecting}
-                        className="flex-1 flex justify-center items-center px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg transition-all duration-200 hover:shadow-xl"
-                      >
-                        {isSubmitting || isDeselecting ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Check className="h-4 w-4 mr-2" />
-                            <span className="font-medium">
-                              Confirm Changes (
-                              {selectedDays.length > 0
-                                ? `${selectedDays.length} add`
-                                : ""}
-                              {selectedDays.length > 0 &&
-                              daysToDeselect.length > 0
-                                ? ", "
-                                : ""}
-                              {daysToDeselect.length > 0
-                                ? `${daysToDeselect.length} remove`
-                                : ""}
-                              )
-                            </span>
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedDays([]);
-                          setDaysToDeselect([]);
-                          setNotes("");
-                          // Don't clear guest name for guests, just reset the confirmation
-                          if (!user) {
-                            setGuestNameConfirmed(false);
-                          } else {
-                            setGuestName("");
-                          }
-                        }}
-                        className="px-6 py-3 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <div className="w-full text-center py-4 text-sm text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-800 rounded-md border border-dashed border-gray-300 dark:border-gray-600">
-                      💡 Select days to add or remove to make changes
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Removed duplicated logged-in section in favor of unified panel above */}
 
             {/* Trip Days Summary */}
             <div className="mt-6">
