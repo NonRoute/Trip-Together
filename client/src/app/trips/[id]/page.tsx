@@ -569,19 +569,7 @@ export default function TripDetailPage() {
                     </div>
                   </div>
 
-                  {user && daysToDeselect.length > 0 && (
-                    <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-md border border-red-200 dark:border-red-800 flex items-center justify-between">
-                      <div className="text-sm text-red-700 dark:text-red-300">
-                        {daysToDeselect.length} day(s) marked for removal
-                      </div>
-                      <button
-                        className="text-xs text-red-700 dark:text-red-300 underline"
-                        onClick={() => setDaysToDeselect([])}
-                      >
-                        Clear
-                      </button>
-                    </div>
-                  )}
+                  {false && user && daysToDeselect.length > 0 && <div />}
 
                   <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
                     <CalendarComponent
@@ -613,41 +601,105 @@ export default function TripDetailPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    Selected ({selectedDays.length})
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDays([])}
-                    className="text-xs text-blue-500 hover:text-blue-700"
-                  >
-                    Clear all
-                  </button>
-                </div>
-                {selectedDays.length > 0 && (
-                  <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-                    <div className="flex flex-wrap gap-2">
-                      {selectedDays.map((date) => (
-                        <span
-                          key={date}
-                          className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100"
-                        >
-                          {new Date(date).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
+                {(selectedDays.length > 0 ||
+                  (user && daysToDeselect.length > 0)) && (
+                  <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        Review changes
+                      </span>
+                      <span className="text-xs text-gray-600 dark:text-gray-300">
+                        {selectedDays.length > 0 &&
+                          `${selectedDays.length} to add`}
+                        {selectedDays.length > 0 &&
+                          user &&
+                          daysToDeselect.length > 0 &&
+                          " • "}
+                        {user &&
+                          daysToDeselect.length > 0 &&
+                          `${daysToDeselect.length} to remove`}
+                      </span>
+                    </div>
+
+                    {selectedDays.length > 0 && (
+                      <>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                            Selected ({selectedDays.length})
+                          </span>
                           <button
                             type="button"
-                            onClick={() => handleDateDeselect(date)}
-                            className="ml-1 text-blue-400 hover:text-blue-800"
+                            onClick={() => setSelectedDays([])}
+                            className="text-xs text-blue-500 hover:text-blue-700"
                           >
-                            <X className="h-3 w-3" />
+                            Clear
                           </button>
-                        </span>
-                      ))}
-                    </div>
+                        </div>
+                        <div className="mb-3">
+                          <div className="flex flex-wrap gap-2">
+                            {selectedDays.map((date) => (
+                              <span
+                                key={date}
+                                className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100"
+                              >
+                                {new Date(date).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}
+                                <button
+                                  type="button"
+                                  onClick={() => handleDateDeselect(date)}
+                                  className="ml-1 text-blue-400 hover:text-blue-800"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {user && daysToDeselect.length > 0 && (
+                      <>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-red-900 dark:text-red-200">
+                            Marked for removal ({daysToDeselect.length})
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setDaysToDeselect([])}
+                            className="text-xs text-red-600 hover:text-red-800"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                        <div>
+                          <div className="flex flex-wrap gap-2">
+                            {daysToDeselect.map((date) => (
+                              <span
+                                key={date}
+                                className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                              >
+                                {new Date(date).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeselectDay(date)}
+                                  className="ml-1 text-red-500 hover:text-red-800"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -665,21 +717,7 @@ export default function TripDetailPage() {
                         ) : (
                           <>
                             <Check className="h-4 w-4 mr-2" />
-                            {user
-                              ? `Confirm changes${
-                                  selectedDays.length
-                                    ? ` (+${selectedDays.length})`
-                                    : ""
-                                }${
-                                  daysToDeselect.length
-                                    ? ` (-${daysToDeselect.length})`
-                                    : ""
-                                }`
-                              : `Confirm selection${
-                                  selectedDays.length
-                                    ? ` (${selectedDays.length})`
-                                    : ""
-                                }`}
+                            {`Confirm changes`}
                           </>
                         )}
                       </button>
