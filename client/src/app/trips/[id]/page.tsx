@@ -288,6 +288,16 @@ export default function TripDetailPage() {
     <div className="max-w-4xl mx-auto">
       {/* Trip Header */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        {trip.trip.imageUrl && (
+          <div className="-mt-6 -mx-6 mb-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={trip.trip.imageUrl}
+              alt={trip.trip.title}
+              className="w-full h-60 object-cover rounded-t-lg"
+            />
+          </div>
+        )}
         <div className="flex items-start justify-between mb-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">

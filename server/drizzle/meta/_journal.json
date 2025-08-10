@@ -15,6 +15,13 @@
       "when": 1752418556511,
       "tag": "0001_moaning_preak",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1754820412668,
+      "tag": "0002_young_gateway",
+      "breakpoints": true
     }
   ]
 }

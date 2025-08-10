@@ -68,6 +68,7 @@ export interface Trip {
   description: string | null;
   creatorId: number;
   destination: string | null;
+  imageUrl: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -165,10 +166,20 @@ export const tripAPI = {
     title: string;
     description?: string;
     destination?: string;
+    imageUrl?: string;
     days: string[];
   }) => {
     const response = await api.post("/trip", data);
     return response.data;
+  },
+
+  uploadTripImage: async (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    const response = await api.post("/trip/upload", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data as { objectKey: string; url: string };
   },
 
   deleteTrip: async (tripId: number) => {

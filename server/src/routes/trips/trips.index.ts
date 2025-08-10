@@ -7,13 +7,15 @@ import {
 } from "@/db/schema";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { createOpenAPIApp } from "../../lib/openapi";
+import { uploadImage } from "../../lib/storage";
 import * as tripRoutes from "./trips.routes";
 
 const router = createOpenAPIApp();
 
 // Create a new trip
 router.openapi(tripRoutes.createTrip, async (c) => {
-  const { title, description, destination, days } = c.req.valid("json");
+  const { title, description, destination, imageUrl, days } =
+    c.req.valid("json");
   const userId = (c.var as any).userId;
 
   try {
@@ -26,6 +28,7 @@ router.openapi(tripRoutes.createTrip, async (c) => {
           title,
           description,
           destination,
+          imageUrl: imageUrl || null,
           creatorId: userId,
         })
         .returning();
@@ -458,3 +461,53 @@ router.openapi(tripRoutes.deleteDaySelection, async (c) => {
 });
 
 export default router;
+
+// Raw image upload endpoint (multipart/form-data)
+// This is not part of OpenAPI for now; could be added later if desired
+router.post("/upload", async (c) => {
+  const contentType = c.req.header("content-type") || "";
+  if (!contentType.includes("multipart/form-data")) {
+    return c.json({ error: "Content-Type must be multipart/form-data" }, 415);
+  }
+
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get("file");
+    if (!(file instanceof File)) {
+      return c.json({ error: "file is required" }, 400);
+    }
+
+    // Validate image type and size (max 5MB)
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "image/avif",
+      "image/svg+xml",
+    ];
+    const maxBytes = 5 * 1024 * 1024;
+
+    if (!allowedTypes.includes(file.type)) {
+      return c.json({ error: "Only image files are allowed" }, 400);
+    }
+    if (typeof file.size === "number" && file.size > maxBytes) {
+      return c.json({ error: "Image size must be under 5MB" }, 400);
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const result = await uploadImage({
+      data: buffer,
+      contentType: file.type || undefined,
+      filename: file.name || undefined,
+    });
+
+    return c.json({ objectKey: result.objectKey, url: result.publicUrl }, 201);
+  } catch (err) {
+    console.error("File upload error:", err);
+    return c.json({ error: "Failed to upload file" }, 500);
+  }
+});

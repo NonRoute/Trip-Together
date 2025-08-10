@@ -18,6 +18,8 @@ interface CreateTripFormData {
   title: string;
   description: string;
   destination: string;
+  imageFile?: File | null;
+  imagePreviewUrl?: string | null;
 }
 
 interface TripDetailsStepProps {
@@ -37,6 +39,12 @@ interface DateSelectionStepProps {
 }
 
 function TripDetailsStep({ formData, onNext, onCancel }: TripDetailsStepProps) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(
+    formData.imageFile ?? null,
+  );
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    formData.imagePreviewUrl ?? null,
+  );
   const {
     register,
     handleSubmit,
@@ -47,7 +55,11 @@ function TripDetailsStep({ formData, onNext, onCancel }: TripDetailsStepProps) {
   });
 
   const handleNext = (data: CreateTripFormData) => {
-    onNext(data);
+    onNext({
+      ...data,
+      imageFile: selectedFile,
+      imagePreviewUrl: previewUrl,
+    });
   };
 
   return (
@@ -110,6 +122,36 @@ function TripDetailsStep({ formData, onNext, onCancel }: TripDetailsStepProps) {
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Enter destination (optional)"
         />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Trip Image
+        </label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const file = e.target.files?.[0] || null;
+            setSelectedFile(file);
+            if (file) {
+              const url = URL.createObjectURL(file);
+              setPreviewUrl(url);
+            } else {
+              setPreviewUrl(null);
+            }
+          }}
+          className="w-full text-sm text-gray-700 dark:text-gray-300"
+        />
+        {previewUrl && (
+          <div className="mt-2">
+            <img
+              src={previewUrl}
+              alt="Preview"
+              className="h-32 w-auto rounded-md border border-gray-200 dark:border-gray-700 object-cover"
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex space-x-4">
@@ -242,6 +284,8 @@ export default function CreateTripForm() {
     title: "",
     description: "",
     destination: "",
+    imageFile: null,
+    imagePreviewUrl: null,
   });
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [error, setError] = useState("");
@@ -257,7 +301,10 @@ export default function CreateTripForm() {
   };
 
   const handleNext = (data: CreateTripFormData) => {
-    setFormData(data);
+    setFormData((prev) => ({
+      ...prev,
+      ...data,
+    }));
     setCurrentStep(2);
   };
 
@@ -279,10 +326,18 @@ export default function CreateTripForm() {
         return;
       }
 
+      let imageUrl: string | undefined = undefined;
+
+      if (formData.imageFile) {
+        const upload = await tripAPI.uploadTripImage(formData.imageFile);
+        imageUrl = upload.url;
+      }
+
       await tripAPI.createTrip({
         title: formData.title,
         description: formData.description || undefined,
         destination: formData.destination || undefined,
+        imageUrl,
         days: selectedDates,
       });
 

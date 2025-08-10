@@ -23,6 +23,7 @@ export const createTrip = createRoute({
             title: "Weekend Beach Trip",
             description: "A fun weekend trip to the beach with friends",
             destination: "Miami Beach",
+            imageUrl: "http://localhost:9000/upload/2025/01/05/uuid.jpg",
             days: ["2024-06-15", "2024-06-16", "2024-06-17"],
           },
         },

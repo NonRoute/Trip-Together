@@ -1,13 +1,11 @@
 "use client";
 
-import { Trip } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
-import { TripWithCreator } from "@repo/types/schema/trips";
-import { Calendar, MapPin, User } from "lucide-react";
+import { TripWithCreator } from "@/lib/api";
+import { Calendar, MapPin, User, Loader2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { tripAPI } from "@/lib/api";
-import { Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 interface TripCardProps {
@@ -21,6 +19,24 @@ export default function TripCard({ trip, onDeleted }: TripCardProps) {
 
   const canDelete = user && user.id === trip.creatorId;
 
+  // Stable gradient selection based on trip id
+  const gradientOptions = [
+    "bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 dark:from-blue-900 dark:via-indigo-900 dark:to-purple-900",
+    "bg-gradient-to-br from-emerald-100 via-teal-100 to-cyan-100 dark:from-emerald-900 dark:via-teal-900 dark:to-cyan-900",
+    "bg-gradient-to-br from-amber-100 via-orange-100 to-rose-100 dark:from-amber-900 dark:via-orange-900 dark:to-rose-900",
+    "bg-gradient-to-br from-fuchsia-100 via-pink-100 to-rose-100 dark:from-fuchsia-900 dark:via-pink-900 dark:to-rose-900",
+    "bg-gradient-to-br from-sky-100 via-blue-100 to-cyan-100 dark:from-sky-900 dark:via-blue-900 dark:to-cyan-900",
+    "bg-gradient-to-br from-lime-100 via-emerald-100 to-teal-100 dark:from-lime-900 dark:via-emerald-900 dark:to-teal-900",
+    "bg-gradient-to-br from-violet-100 via-indigo-100 to-slate-100 dark:from-violet-900 dark:via-indigo-900 dark:to-slate-900",
+    "bg-gradient-to-br from-rose-100 via-pink-100 to-orange-100 dark:from-rose-900 dark:via-pink-900 dark:to-orange-900",
+    "bg-gradient-to-br from-cyan-100 via-teal-100 to-green-100 dark:from-cyan-900 dark:via-teal-900 dark:to-green-900",
+    "bg-gradient-to-br from-purple-100 via-fuchsia-100 to-pink-100 dark:from-purple-900 dark:via-fuchsia-900 dark:to-pink-900",
+    "bg-gradient-to-br from-stone-100 via-neutral-100 to-slate-100 dark:from-stone-800 dark:via-neutral-800 dark:to-slate-800",
+    "bg-gradient-to-br from-indigo-100 via-blue-100 to-sky-100 dark:from-indigo-900 dark:via-blue-900 dark:to-sky-900",
+  ];
+  const gradientClass =
+    gradientOptions[Math.abs(trip.id) % gradientOptions.length];
+
   const handleDelete = async () => {
     if (!canDelete) return;
     const confirmed = window.confirm(
@@ -32,7 +48,6 @@ export default function TripCard({ trip, onDeleted }: TripCardProps) {
       await tripAPI.deleteTrip(trip.id);
       onDeleted?.(trip.id);
     } catch {
-      // optional: surface error
       alert("Failed to delete trip");
     } finally {
       setIsDeleting(false);
@@ -40,61 +55,72 @@ export default function TripCard({ trip, onDeleted }: TripCardProps) {
   };
 
   return (
-    <div className="group bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
-      <div className="p-6 flex flex-col justify-end h-full">
-        <div className="flex items-start justify-between mb-auto">
-          <div className="flex-1">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              {trip.title}
-            </h3>
-            {trip.description && (
-              <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">
-                {trip.description}
-              </p>
+    <div className="group flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:ring-1 hover:ring-blue-200 dark:border-gray-700 dark:bg-gray-800 dark:hover:ring-blue-600/40">
+      <div className="relative aspect-[16/9] w-full overflow-hidden">
+        {trip.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={trip.imageUrl}
+            alt={trip.title}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            loading="lazy"
+          />
+        ) : (
+          <div className={`h-full w-full ${gradientClass}`} />
+        )}
+
+        {canDelete && (
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            aria-label="Delete trip"
+            title="Delete trip"
+            className="absolute right-3 top-3 inline-flex items-center rounded-md bg-white/90 p-1.5 text-gray-500 shadow-sm backdrop-blur transition hover:bg-red-50 hover:text-red-600 disabled:opacity-60 dark:bg-gray-900/70 dark:text-gray-300 dark:hover:bg-red-900/30"
+          >
+            {isDeleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
             )}
-          </div>
-          {canDelete && (
-            <button
-              onClick={handleDelete}
-              disabled={isDeleting}
-              aria-label="Delete trip"
-              className={`ml-2 inline-flex items-center p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 transition-opacity group-hover:opacity-100 ${
-                isDeleting ? "opacity-100" : ""
-              }`}
-              title="Delete trip"
-            >
-              {isDeleting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4" />
-              )}
-            </button>
-          )}
+          </button>
+        )}
+      </div>
+
+      <div className="flex grow flex-col p-5">
+        <div className="mb-2 flex items-start justify-between">
+          <h3 className="line-clamp-1 text-lg font-semibold text-gray-900 dark:text-white">
+            {trip.title}
+          </h3>
         </div>
 
-        <div className="space-y-2 mb-4">
+        {trip.description && (
+          <p className="mb-3 line-clamp-2 text-sm text-gray-600 dark:text-gray-300">
+            {trip.description}
+          </p>
+        )}
+
+        <div className="mb-4 flex flex-wrap gap-2">
           {trip.destination && (
-            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-              <MapPin className="h-4 w-4 mr-2" />
-              <span>{trip.destination}</span>
-            </div>
+            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+              <MapPin className="h-3.5 w-3.5" />
+              {trip.destination}
+            </span>
           )}
-
-          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-            <Calendar className="h-4 w-4 mr-2" />
-            <span>Created {formatDate(trip.createdAt)}</span>
-          </div>
+          <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+            <Calendar className="h-3.5 w-3.5" />
+            Created {formatDate(trip.createdAt)}
+          </span>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-            <User className="h-4 w-4 mr-1" />
-            <span>Creator: {trip.creator}</span>
-          </div>
+        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <User className="h-4 w-4" />
+          <span>Creator: {trip.creator}</span>
+        </div>
 
+        <div className="mt-auto pt-4 dark:border-gray-700">
           <Link
             href={`/trips/${trip.id}`}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+            className="inline-flex w-full justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
           >
             View Details
           </Link>

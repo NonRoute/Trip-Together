@@ -35,6 +35,7 @@ export const tripsTable = pgTable("trips", {
     .notNull()
     .references(() => usersTable.id, { onDelete: "cascade" }),
   destination: varchar({ length: 255 }),
+  imageUrl: text(),
   isActive: boolean().default(true).notNull(),
   createdAt: timestamp().defaultNow().notNull(),
   updatedAt: timestamp().defaultNow().notNull(),

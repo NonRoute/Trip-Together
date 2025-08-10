@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "start": "bun src/index.ts",
-    "build": "bun build src/index.ts --outdir dist",
+    "build": "bun build --target bun src/index.ts --outdir dist",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
@@ -20,6 +20,7 @@
     "drizzle-orm": "^0.44.4",
     "hono": "^4.9.0",
     "jsonwebtoken": "^9.0.2",
+    "minio": "^8.0.2",
     "postgres": "^3.4.7",
     "zod": "^4.0.16"
   },

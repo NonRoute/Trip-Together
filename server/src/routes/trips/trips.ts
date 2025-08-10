@@ -28,6 +28,11 @@ export const tripSchema = z
       description: "Trip destination",
       example: "Miami Beach",
     }),
+    imageUrl: z.string().nullable().openapi({
+      type: "string",
+      description: "Image URL associated with the trip",
+      example: "http://localhost:9000/upload/2025/01/05/uuid.jpg",
+    }),
     isActive: z.boolean().openapi({
       type: "boolean",
       description: "Whether the trip is active",
@@ -78,6 +83,11 @@ export const createTripSchema = z
       type: "string",
       description: "Trip destination",
       example: "Miami Beach",
+    }),
+    imageUrl: z.string().url().optional().openapi({
+      type: "string",
+      description: "Public URL of the uploaded trip image",
+      example: "http://localhost:9000/upload/2025/01/05/uuid.jpg",
     }),
     days: z
       .array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"))
