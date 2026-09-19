@@ -11,6 +11,8 @@ interface CalendarProps {
   onDateDeselect: (date: string) => void;
   selectionCounts?: Record<string, number>;
   availableDates?: string[];
+  // All trip days, used to pick which month opens first
+  monthDates?: string[];
   disableDayLogic?: boolean;
   onDateRemove?: (date: string) => void;
   daysToRemove?: string[];
@@ -24,12 +26,19 @@ export default function Calendar({
   onDateDeselect,
   selectionCounts = {},
   availableDates = [],
+  monthDates,
   disableDayLogic = true,
   onDateRemove,
   daysToRemove = [],
   isLoggedIn = false,
 }: CalendarProps) {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // Open on the month of the trip's first day
+  const [currentDate, setCurrentDate] = useState(() => {
+    const earliest = [...(monthDates ?? availableDates)].sort()[0];
+    if (!earliest) return new Date();
+    const [year, month] = earliest.split("-").map(Number);
+    return new Date(year!, month! - 1, 1);
+  });
 
   // Generate calendar days for the current month
   const generateDaysForMonth = (date: Date) => {

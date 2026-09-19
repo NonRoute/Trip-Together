@@ -82,8 +82,10 @@ function TripDetailsStep({ formData, onNext, onCancel }: TripDetailsStepProps) {
           type="text"
           id="title"
           className={cn(
-            "w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
-            errors.title ? "border-red-300" : "border-gray-300",
+            "w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
+            errors.title
+              ? "border-red-300"
+              : "border-gray-300 dark:border-gray-600",
           )}
           placeholder="Enter trip title"
         />
@@ -103,7 +105,7 @@ function TripDetailsStep({ formData, onNext, onCancel }: TripDetailsStepProps) {
           {...register("description")}
           id="description"
           rows={3}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Enter trip description (optional)"
         />
       </div>
@@ -119,7 +121,7 @@ function TripDetailsStep({ formData, onNext, onCancel }: TripDetailsStepProps) {
           {...register("destination")}
           type="text"
           id="destination"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Enter destination (optional)"
         />
       </div>
@@ -158,7 +160,7 @@ function TripDetailsStep({ formData, onNext, onCancel }: TripDetailsStepProps) {
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="flex-1 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           Cancel
         </button>
@@ -256,7 +258,7 @@ function DateSelectionStep({
         <button
           type="button"
           onClick={onBack}
-          className="flex-1 flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="flex-1 flex justify-center items-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
@@ -369,7 +371,7 @@ export default function CreateTripForm() {
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   currentStep >= 1
                     ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-500"
+                    : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
                 }`}
               >
                 1
@@ -384,7 +386,7 @@ export default function CreateTripForm() {
             </div>
             <div
               className={`w-8 h-1 ${
-                currentStep >= 2 ? "bg-blue-600" : "bg-gray-200"
+                currentStep >= 2 ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-700"
               }`}
             ></div>
             <div className="flex flex-col items-center gap-1 px-2">
@@ -392,7 +394,7 @@ export default function CreateTripForm() {
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   currentStep >= 2
                     ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-500"
+                    : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
                 }`}
               >
                 2

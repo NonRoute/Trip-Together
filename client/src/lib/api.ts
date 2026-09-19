@@ -94,6 +94,7 @@ export interface TripWithDays {
 export interface DaySelection {
   id: number;
   userId: number | null;
+  userName: string | null;
   guestName: string | null;
   tripDayId: number;
   notes: string | null;

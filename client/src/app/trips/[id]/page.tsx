@@ -430,13 +430,13 @@ export default function TripDetailPage() {
               </p>
             </div>
 
-            {/* After confirming name, show selection UI or already selected message */}
+            {/* After confirming name, show which days this guest already has */}
             {!user && guestNameConfirmed && guestSelectedDay ? (
               <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-md flex items-center justify-between">
                 <div className="text-sm">
                   <span className="mr-2">You already selected:</span>
                   <span className="font-semibold">
-                    {formatDate(guestSelectedDay)}
+                    {userSelectedDays.map(formatDate).join(", ")}
                   </span>
                 </div>
                 <button
@@ -459,7 +459,7 @@ export default function TripDetailPage() {
                     type="text"
                     value={guestName}
                     onChange={(e) => setGuestName(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter your name"
                   />
                   <button
@@ -474,7 +474,7 @@ export default function TripDetailPage() {
             )}
 
             {/* Selection Form - Unified for user or confirmed guest */}
-            {(user || (!user && guestNameConfirmed && !guestSelectedDay)) && (
+            {(user || (!user && guestNameConfirmed)) && (
               <div className="mb-6 p-6 bg-gray-50 dark:bg-gray-700 rounded-md">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                   Choose days
@@ -591,6 +591,7 @@ export default function TripDetailPage() {
                       availableDates={trip.days
                         .map((d) => d.tripDay.day)
                         .filter((date) => !userSelectedDays.includes(date))}
+                      monthDates={trip.days.map((d) => d.tripDay.day)}
                       onDateRemove={user ? handleDeselectDay : undefined}
                       daysToRemove={daysToDeselect}
                       isLoggedIn={!!user}
@@ -606,7 +607,7 @@ export default function TripDetailPage() {
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Optional"
                   />
                 </div>
@@ -820,8 +821,9 @@ export default function TripDetailPage() {
                                   )}
                                 >
                                   <User className="h-3 w-3 mr-1" />
-                                  {selection.guestName ||
-                                    `User ${selection.userId}`}
+                                  {selection.userName ||
+                                    selection.guestName ||
+                                    "Unknown"}
                                   {isCurrentUser && " (You)"}
                                   {selection.notes && (
                                     <span className="ml-1 text-gray-400">
