@@ -909,3 +909,82 @@ export const deleteDaySelection = createRoute({
     },
   },
 });
+
+export const uploadImage = createRoute({
+  method: "post",
+  path: "/upload",
+  middleware: [authMiddleware],
+  tags,
+  security: [
+    {
+      BearerAuth: [],
+    },
+  ],
+  request: {
+    body: {
+      content: {
+        "multipart/form-data": {
+          schema: tripSchemas.uploadImage,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      content: {
+        "application/json": {
+          schema: tripSchemas.uploadImageResponse,
+          example: {
+            objectKey: "2025/01/05/uuid.jpg",
+            url: "http://localhost:9000/upload/2025/01/05/uuid.jpg",
+          },
+        },
+      },
+      description: "Image uploaded successfully",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: tripSchemas.error,
+          example: {
+            error: "Only PNG, JPEG, GIF, WebP or AVIF images are allowed",
+          },
+        },
+      },
+      description: "Invalid image",
+    },
+    401: {
+      content: {
+        "application/json": {
+          schema: tripSchemas.error,
+          example: {
+            error: "Unauthorized: Please provide a valid authentication token",
+          },
+        },
+      },
+      description: "Unauthorized",
+    },
+    415: {
+      content: {
+        "application/json": {
+          schema: tripSchemas.error,
+          example: {
+            error: "Content-Type must be multipart/form-data",
+          },
+        },
+      },
+      description: "Unsupported media type",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: tripSchemas.error,
+          example: {
+            error: "Failed to upload file",
+          },
+        },
+      },
+      description: "Internal server error",
+    },
+  },
+});

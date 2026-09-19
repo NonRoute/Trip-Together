@@ -488,7 +488,6 @@ router.openapi(tripRoutes.deleteDaySelection, async (c) => {
   return c.json({ message: "Selection deleted successfully" }, 200);
 });
 
-export default router;
 
 // Detect the image type from magic bytes, or null if it is not an allowed image
 function detectImageType(buffer: Buffer): string | null {
@@ -515,9 +514,8 @@ function detectImageType(buffer: Buffer): string | null {
   return null;
 }
 
-// Raw image upload endpoint (multipart/form-data)
-// This is not part of OpenAPI for now; could be added later if desired
-router.post("/upload", authMiddleware, async (c) => {
+// Upload a trip image
+router.openapi(tripRoutes.uploadImage, async (c) => {
   const contentType = c.req.header("content-type") || "";
   if (!contentType.includes("multipart/form-data")) {
     return c.json({ error: "Content-Type must be multipart/form-data" }, 415);
@@ -562,3 +560,5 @@ router.post("/upload", authMiddleware, async (c) => {
     return c.json({ error: "Failed to upload file" }, 500);
   }
 });
+
+export default router;

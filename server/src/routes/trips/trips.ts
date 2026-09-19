@@ -432,6 +432,42 @@ export const tripWithDaysAndSelectionsSchema = z
   });
 
 // Common response schemas
+// Upload image schemas
+export const uploadImageSchema = z
+  .object({
+    file: z.instanceof(File).openapi({
+      type: "string",
+      format: "binary",
+      description: "Image file (PNG, JPEG, GIF, WebP or AVIF), max 5MB",
+    }),
+  })
+  .openapi({
+    type: "object",
+    description: "Image upload data",
+  });
+
+export const uploadImageResponseSchema = z
+  .object({
+    objectKey: z.string().openapi({
+      type: "string",
+      description: "Object key inside the bucket",
+      example: "2025/01/05/uuid.jpg",
+    }),
+    url: z.string().openapi({
+      type: "string",
+      description: "Public URL of the uploaded image",
+      example: "http://localhost:9000/upload/2025/01/05/uuid.jpg",
+    }),
+  })
+  .openapi({
+    type: "object",
+    description: "Uploaded image",
+    example: {
+      objectKey: "2025/01/05/uuid.jpg",
+      url: "http://localhost:9000/upload/2025/01/05/uuid.jpg",
+    },
+  });
+
 export const errorSchema = z
   .object({
     error: z.string().openapi({
@@ -577,6 +613,8 @@ export const tripSchemas = {
   addTripDay: addTripDaySchema,
   userDaySelection: userDaySelectionSchema,
   createDaySelection: createDaySelectionSchema,
+  uploadImage: uploadImageSchema,
+  uploadImageResponse: uploadImageResponseSchema,
   tripWithDays: tripWithDaysSchema,
   tripWithDaysAndSelections: tripWithDaysAndSelectionsSchema,
   tripDayWithSelections: tripDayWithSelectionsSchema,

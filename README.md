@@ -188,8 +188,6 @@ Base URL `http://localhost:8000`. **Yes** means the request needs an `Authorizat
 | DELETE | `/trip/{tripId}/days/{dayId}/selections/{selectionId}` | Yes  | Remove a pick                              |
 | POST   | `/trip/upload`                                         | Yes  | Upload a photo — multipart `file`, max 5MB |
 
-Every endpoint except `/trip/upload` is documented at `/docs`.
-
 ---
 
 ## How to run
