@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.18.1",
+    "@hono/swagger-ui": "^0.6.1",
     "@hono/zod-openapi": "~1.1.0",
     "bcryptjs": "^3.0.2",
     "dotenv": "^17.2.1",
@@ -21,6 +22,7 @@
     "hono": "^4.9.0",
     "jsonwebtoken": "^9.0.2",
     "minio": "^8.0.2",
+    "pg": "^8.23.0",
     "postgres": "^3.4.7",
     "zod": "^4.0.16"
   },
@@ -28,6 +30,7 @@
     "@types/bcryptjs": "^3.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.2.1",
+    "@types/pg": "^8.23.1",
     "bun-types": "^1.2.19",
     "drizzle-kit": "^0.31.4",
     "typescript": "^5.9.2"
