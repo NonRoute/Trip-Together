@@ -5,10 +5,20 @@ import {
   userDaySelectionsTable,
   usersTable,
 } from "@/db/schema";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
+import { authMiddleware } from "../../middleware/auth";
 import { createOpenAPIApp } from "../../lib/openapi";
 import { uploadImage } from "../../lib/storage";
 import * as tripRoutes from "./trips.routes";
+
+// Postgres unique violation
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    (err as { code?: string }).code === "23505"
+  );
+}
 
 const router = createOpenAPIApp();
 
@@ -112,6 +122,7 @@ router.openapi(tripRoutes.getTrip, async (c) => {
       // Selection fields (nullable due to LEFT JOIN)
       selectionId: userDaySelectionsTable.id,
       userId: userDaySelectionsTable.userId,
+      userName: usersTable.name,
       guestName: userDaySelectionsTable.guestName,
       tripDayId: userDaySelectionsTable.tripDayId,
       notes: userDaySelectionsTable.notes,
@@ -123,6 +134,7 @@ router.openapi(tripRoutes.getTrip, async (c) => {
       userDaySelectionsTable,
       eq(tripDaysTable.id, userDaySelectionsTable.tripDayId),
     )
+    .leftJoin(usersTable, eq(userDaySelectionsTable.userId, usersTable.id))
     .where(eq(tripDaysTable.tripId, tripId))
     .orderBy(tripDaysTable.day, userDaySelectionsTable.createdAt);
 
@@ -150,6 +162,7 @@ router.openapi(tripRoutes.getTrip, async (c) => {
       daysMap.get(dayKey).selections.push({
         id: row.selectionId,
         userId: row.userId,
+        userName: row.userName,
         guestName: row.guestName,
         tripDayId: row.tripDayId,
         notes: row.notes,
@@ -259,6 +272,7 @@ router.openapi(tripRoutes.getTripDay, async (c) => {
     .select({
       id: userDaySelectionsTable.id,
       userId: userDaySelectionsTable.userId,
+      userName: usersTable.name,
       guestName: userDaySelectionsTable.guestName,
       tripDayId: userDaySelectionsTable.tripDayId,
       notes: userDaySelectionsTable.notes,
@@ -266,6 +280,7 @@ router.openapi(tripRoutes.getTripDay, async (c) => {
       updatedAt: userDaySelectionsTable.updatedAt,
     })
     .from(userDaySelectionsTable)
+    .leftJoin(usersTable, eq(userDaySelectionsTable.userId, usersTable.id))
     .where(eq(userDaySelectionsTable.tripDayId, dayId))
     .orderBy(userDaySelectionsTable.createdAt);
 
@@ -311,15 +326,23 @@ router.openapi(tripRoutes.createDaySelection, async (c) => {
     return c.json({ error: "You already have a selection for this day" }, 400);
   }
 
-  const [selection] = await db
-    .insert(userDaySelectionsTable)
-    .values({
-      userId,
-      guestName: null,
-      tripDayId: dayId,
-      notes,
-    })
-    .returning();
+  let selection;
+  try {
+    [selection] = await db
+      .insert(userDaySelectionsTable)
+      .values({
+        userId,
+        guestName: null,
+        tripDayId: dayId,
+        notes,
+      })
+      .returning();
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      return c.json({ error: "You already have a selection for this day" }, 400);
+    }
+    throw err;
+  }
 
   if (!selection) {
     return c.json({ error: "Failed to create day selection" }, 500);
@@ -344,40 +367,45 @@ router.openapi(tripRoutes.createGuestDaySelection, async (c) => {
     return c.json({ error: "Trip day not found" }, 404);
   }
 
-  // Check if guest already has a selection for ANY day in this trip
-  const tripDayIds = await db
-    .select({ id: tripDaysTable.id })
-    .from(tripDaysTable)
-    .where(eq(tripDaysTable.tripId, tripId));
-  const tripDayIdList = tripDayIds.map((row) => row.id);
+  // Normalize the name so " Bob " and "Bob" are the same guest
+  const name = guestName.trim();
+  if (!name) {
+    return c.json({ error: "Guest name is required" }, 400);
+  }
 
+  // Check if guest already has a selection for this day
   const existingSelection = await db
     .select()
     .from(userDaySelectionsTable)
     .where(
       and(
-        eq(userDaySelectionsTable.guestName, guestName),
-        inArray(userDaySelectionsTable.tripDayId, tripDayIdList),
+        eq(userDaySelectionsTable.guestName, name),
+        eq(userDaySelectionsTable.tripDayId, dayId),
       ),
     )
     .limit(1);
 
   if (existingSelection.length) {
-    return c.json(
-      { error: "Guest has already selected a day for this trip" },
-      409,
-    );
+    return c.json({ error: "Guest has already selected this day" }, 409);
   }
 
-  const [selection] = await db
-    .insert(userDaySelectionsTable)
-    .values({
-      userId: null,
-      guestName,
-      tripDayId: dayId,
-      notes,
-    })
-    .returning();
+  let selection;
+  try {
+    [selection] = await db
+      .insert(userDaySelectionsTable)
+      .values({
+        userId: null,
+        guestName: name,
+        tripDayId: dayId,
+        notes,
+      })
+      .returning();
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      return c.json({ error: "Guest has already selected this day" }, 409);
+    }
+    throw err;
+  }
 
   if (!selection) {
     return c.json({ error: "Failed to create guest day selection" }, 500);
@@ -462,9 +490,34 @@ router.openapi(tripRoutes.deleteDaySelection, async (c) => {
 
 export default router;
 
+// Detect the image type from magic bytes, or null if it is not an allowed image
+function detectImageType(buffer: Buffer): string | null {
+  if (buffer.length < 12) return null;
+
+  const startsWith = (...bytes: number[]) =>
+    bytes.every((b, i) => buffer[i] === b);
+
+  if (startsWith(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a))
+    return "image/png";
+  if (startsWith(0xff, 0xd8, 0xff)) return "image/jpeg";
+  if (startsWith(0x47, 0x49, 0x46, 0x38)) return "image/gif";
+
+  const riff = buffer.toString("ascii", 0, 4);
+  const webp = buffer.toString("ascii", 8, 12);
+  if (riff === "RIFF" && webp === "WEBP") return "image/webp";
+
+  // AVIF: "ftyp" box with an avif brand
+  if (buffer.toString("ascii", 4, 8) === "ftyp") {
+    const brand = buffer.toString("ascii", 8, 12);
+    if (brand === "avif" || brand === "avis") return "image/avif";
+  }
+
+  return null;
+}
+
 // Raw image upload endpoint (multipart/form-data)
 // This is not part of OpenAPI for now; could be added later if desired
-router.post("/upload", async (c) => {
+router.post("/upload", authMiddleware, async (c) => {
   const contentType = c.req.header("content-type") || "";
   if (!contentType.includes("multipart/form-data")) {
     return c.json({ error: "Content-Type must be multipart/form-data" }, 415);
@@ -477,31 +530,29 @@ router.post("/upload", async (c) => {
       return c.json({ error: "file is required" }, 400);
     }
 
-    // Validate image type and size (max 5MB)
-    const allowedTypes = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/webp",
-      "image/gif",
-      "image/avif",
-      "image/svg+xml",
-    ];
+    // SVG is not allowed: the bucket is public, so it could run its own script
     const maxBytes = 5 * 1024 * 1024;
 
-    if (!allowedTypes.includes(file.type)) {
-      return c.json({ error: "Only image files are allowed" }, 400);
-    }
-    if (typeof file.size === "number" && file.size > maxBytes) {
+    // Reject unless the size is known and fits
+    if (!(typeof file.size === "number" && file.size <= maxBytes)) {
       return c.json({ error: "Image size must be under 5MB" }, 400);
     }
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    // Check the bytes, not the declared Content-Type
+    const detectedType = detectImageType(buffer);
+    if (!detectedType) {
+      return c.json(
+        { error: "Only PNG, JPEG, GIF, WebP or AVIF images are allowed" },
+        400,
+      );
+    }
+
     const result = await uploadImage({
       data: buffer,
-      contentType: file.type || undefined,
+      contentType: detectedType,
       filename: file.name || undefined,
     });
 

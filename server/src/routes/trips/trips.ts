@@ -181,6 +181,12 @@ export const userDaySelectionSchema = z
       description: "User ID (if logged in)",
       example: 1,
     }),
+    // Only returned by the read endpoints
+    userName: z.string().nullish().openapi({
+      type: "string",
+      description: "Registered user's name (null for guests)",
+      example: "Alice Chen",
+    }),
     guestName: z.string().nullable().openapi({
       type: "string",
       description: "Guest name (if not logged in)",
@@ -215,7 +221,8 @@ export const userDaySelectionSchema = z
     example: {
       id: 1,
       userId: 1,
-      guestName: "John Doe",
+      userName: "Alice Chen",
+      guestName: null,
       tripDayId: 1,
       notes: "I can only join for half day",
       createdAt: "2024-01-01T12:00:00Z",

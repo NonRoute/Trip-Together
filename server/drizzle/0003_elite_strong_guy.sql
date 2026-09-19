@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "user_day_selections_user_day_unique" ON "user_day_selections" USING btree ("tripDayId","userId");--> statement-breakpoint
+CREATE UNIQUE INDEX "user_day_selections_guest_day_unique" ON "user_day_selections" USING btree ("tripDayId","guestName");

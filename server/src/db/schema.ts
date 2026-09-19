@@ -5,6 +5,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
 
@@ -50,14 +51,28 @@ export const tripDaysTable = pgTable("trip_days", {
   createdAt: timestamp().defaultNow().notNull(),
 });
 
-export const userDaySelectionsTable = pgTable("user_day_selections", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  userId: integer().references(() => usersTable.id, { onDelete: "cascade" }),
-  guestName: varchar({ length: 255 }),
-  tripDayId: integer()
-    .notNull()
-    .references(() => tripDaysTable.id, { onDelete: "cascade" }),
-  notes: text(),
-  createdAt: timestamp().defaultNow().notNull(),
-  updatedAt: timestamp().defaultNow().notNull(),
-});
+export const userDaySelectionsTable = pgTable(
+  "user_day_selections",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    userId: integer().references(() => usersTable.id, { onDelete: "cascade" }),
+    guestName: varchar({ length: 255 }),
+    tripDayId: integer()
+      .notNull()
+      .references(() => tripDaysTable.id, { onDelete: "cascade" }),
+    notes: text(),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp().defaultNow().notNull(),
+  },
+  (table) => [
+    // One selection per person per day (NULLs are distinct in Postgres)
+    uniqueIndex("user_day_selections_user_day_unique").on(
+      table.tripDayId,
+      table.userId,
+    ),
+    uniqueIndex("user_day_selections_guest_day_unique").on(
+      table.tripDayId,
+      table.guestName,
+    ),
+  ],
+);
