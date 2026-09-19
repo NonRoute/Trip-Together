@@ -244,3 +244,9 @@ server/
 ```
 
 `*.routes.ts` describes the endpoint with Zod, and `*.index.ts` implements it. Adding an endpoint means writing both.
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
